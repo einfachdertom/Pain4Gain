@@ -89,6 +89,22 @@
   }
   .hidden { display: none !important; }
 
+  .label { font-size: 15px; color: var(--muted); margin: 6px 0 2px; }
+  .sub { font-size: 14px; color: var(--muted); margin: 6px 2px 0; min-height: 20px; }
+  .unlockbox {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    background: var(--moss); color: #fff; border-radius: 12px; padding: 12px 16px; margin: 16px 0 4px;
+  }
+  .unlockbox .time { font-family: var(--display); font-weight: 700; font-size: 44px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .redeem { margin-top: 20px; }
+  .chips { display: flex; gap: 8px; margin: 10px 0 12px; }
+  button.chip {
+    flex: 1; width: auto; padding: 10px 6px; font-size: 15px; font-weight: 500;
+    background: transparent; color: var(--ink); border: 1.5px solid var(--line); border-radius: 8px;
+  }
+  button.chip:active { background: rgba(22,35,31,.08); }
+  button:disabled { opacity: .5; cursor: default; }
+
   /* Querformat am Handy: kompakter, Bühne begrenzt */
   @media (orientation: landscape) and (max-height: 520px) {
     main { max-width: 900px; }
@@ -104,25 +120,37 @@
 <main>
   <h1>Liegestütz-Schlüssel</h1>
 
-  <!-- Trainingsansicht -->
-  <section id="trainView">
+  <!-- Konto: Guthaben, Einlösen, Einstellungen -->
+  <section id="homeView">
+    <p class="label">Guthaben</p>
     <div class="counter">
-      <div class="count" id="count" aria-live="polite">0</div>
-      <div class="goal">= <span id="minLabel">0</span> Min</div>
+      <div class="count" id="balance" aria-live="polite">0</div>
+      <div class="goal">Min</div>
+    </div>
+    <p class="sub" id="expiryInfo"></p>
+
+    <div class="unlockbox hidden" id="unlockBox">
+      <span>Freigeschaltet, noch</span>
+      <span class="time" id="remaining">00:00</span>
     </div>
 
-    <div class="stage" id="stage">
-      <canvas id="canvas" width="640" height="480"></canvas>
-      <div class="placeholder" id="placeholder">Stell das Handy (hochkant oder quer) auf den Boden, sodass die Kamera deine Körperseite filmt. Etwa 2 m Abstand, ganzer Körper im Bild, gutes Licht.</div>
-      <video id="video" playsinline muted></video>
+    <div class="redeem">
+      <label class="field" for="redeemInput" style="margin-top:0">Minuten einlösen</label>
+      <input id="redeemInput" type="number" inputmode="decimal" min="1" step="1" value="15"
+             style="display:block;width:100%;font:inherit;font-size:16px;color:var(--ink);padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);margin-top:6px">
+      <div class="chips">
+        <button class="chip" data-min="15">15</button>
+        <button class="chip" data-min="30">30</button>
+        <button class="chip" data-min="60">60</button>
+        <button class="chip" data-min="all">Alles</button>
+      </div>
+      <button id="redeemBtn">Einlösen</button>
     </div>
 
-    <div class="status" id="status">Bereit.</div>
-    <div class="meta"><span>Winkel: <b id="angleLabel">-</b> · Tiefster: <b id="lowLabel">-</b></span><span id="phaseLabel">-</span></div>
-
-    <button id="startBtn">Training starten</button>
-    <button id="finishBtn" class="hidden">Fertig, Zeit freischalten</button>
-    <button id="stopBtn" class="secondary hidden">Abbrechen</button>
+    <p class="status" id="homeStatus"></p>
+    <button id="retryBtn" class="hidden">Erneut senden</button>
+    <button id="trainBtn" class="secondary">Training</button>
+    <button id="lockBtn" class="secondary">Jetzt wieder sperren</button>
 
     <details>
       <summary>Einstellungen</summary>
@@ -147,18 +175,30 @@
           <option value="lite">Schnell (mehr Bilder pro Sekunde)</option>
         </select>
       </label>
-      <p class="hint">Mit "Fertig" sendet die Seite die verdienten Minuten an deinen Worker, der die Sperre aufhebt. Der Token bleibt nur in diesem Browser gespeichert.</p>
+      <p class="hint">Training schreibt Minuten gut. Jede Gutschrift verfällt 24 Stunden nach dem Training. Beim Einlösen werden die ältesten Minuten zuerst verbraucht. Der Token bleibt nur in diesem Browser gespeichert.</p>
     </details>
   </section>
 
-  <!-- Freigeschaltet -->
-  <section id="doneView" class="unlocked hidden">
-    <p class="label">Freigeschaltet, noch</p>
-    <div class="time" id="remaining">30:00</div>
-    <p class="status" id="doneStatus"></p>
-    <button id="retryBtn" class="hidden">Erneut senden</button>
-    <button id="moreBtn" class="secondary">Weiter trainieren</button>
-    <button id="resetBtn" class="secondary">Jetzt wieder sperren</button>
+  <!-- Training -->
+  <section id="trainView" class="hidden">
+    <div class="counter">
+      <div class="count" id="count" aria-live="polite">0</div>
+      <div class="goal">= <span id="minLabel">0</span> Min</div>
+    </div>
+
+    <div class="stage" id="stage">
+      <canvas id="canvas" width="640" height="480"></canvas>
+      <div class="placeholder" id="placeholder">Stell das Handy (hochkant oder quer) auf den Boden, sodass die Kamera deine Körperseite filmt. Etwa 2 m Abstand, ganzer Körper im Bild, gutes Licht.</div>
+      <video id="video" playsinline muted></video>
+    </div>
+
+    <div class="status" id="status">Bereit.</div>
+    <div class="meta"><span>Winkel: <b id="angleLabel">-</b> · Tiefster: <b id="lowLabel">-</b></span><span id="phaseLabel">-</span></div>
+
+    <button id="startBtn">Training starten</button>
+    <button id="finishBtn" class="hidden">Fertig, gutschreiben</button>
+    <button id="stopBtn" class="secondary hidden">Abbrechen</button>
+    <button id="backBtn" class="secondary">Zurück zum Guthaben</button>
   </section>
 </main>
 
@@ -188,10 +228,12 @@ const el = {
   count: $("count"), minLabel: $("minLabel"),
   stage: $("stage"), canvas: $("canvas"), placeholder: $("placeholder"), video: $("video"),
   status: $("status"), angle: $("angleLabel"), low: $("lowLabel"), phase: $("phaseLabel"),
-  start: $("startBtn"), stop: $("stopBtn"), finishBtn: $("finishBtn"), moreBtn: $("moreBtn"),
+  start: $("startBtn"), stop: $("stopBtn"), finishBtn: $("finishBtn"), back: $("backBtn"),
   setPerRep: $("setPerRep"), setWorker: $("setWorker"), setToken: $("setToken"), setCamera: $("setCamera"), setModel: $("setModel"),
-  trainView: $("trainView"), doneView: $("doneView"), remaining: $("remaining"),
-  doneStatus: $("doneStatus"), retryBtn: $("retryBtn"), resetBtn: $("resetBtn")
+  homeView: $("homeView"), trainView: $("trainView"),
+  balance: $("balance"), expiry: $("expiryInfo"), unlockBox: $("unlockBox"), remaining: $("remaining"),
+  redeemInput: $("redeemInput"), redeemBtn: $("redeemBtn"), homeStatus: $("homeStatus"),
+  retryBtn: $("retryBtn"), trainBtn: $("trainBtn"), lockBtn: $("lockBtn")
 };
 const ctx = el.canvas.getContext("2d");
 const rotCanvas = document.createElement("canvas");
@@ -497,6 +539,7 @@ async function startTraining() {
 
     running = true;
     el.start.classList.add("hidden");
+    el.back.classList.add("hidden");
     el.finishBtn.classList.remove("hidden");
     el.stop.classList.remove("hidden");
     setStatus("Geh in die Liegestütz-Position.");
@@ -522,6 +565,7 @@ function stopCamera() {
   wakeLock = null;
   el.video.srcObject = null;
   el.start.classList.remove("hidden");
+  el.back.classList.remove("hidden");
   el.finishBtn.classList.add("hidden");
   el.stop.classList.add("hidden");
 }
@@ -535,111 +579,166 @@ function abort() {
   reps = 0; renderCount();
 }
 
-// ---------- Freischaltung ----------
-let timer = 0;
+// ---------- Konto: Guthaben und Freischaltung ----------
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(16).slice(2));
+const fmtMin = x => String(Math.round(x * 10) / 10);
+function fmt(ms) {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+}
+function fmtDur(ms) {
+  const m = Math.max(0, Math.ceil(ms / 60000)), h = Math.floor(m / 60);
+  return h ? h + " h " + (m % 60) + " min" : m + " min";
+}
+
+let acct = { credits: [], until: 0 }, offset = 0, pendingFailed = false, homeTimer = 0;
+const serverNow = () => Date.now() + offset;
+const liveCredits = () => acct.credits.filter(c => c.exp > serverNow());
+const liveTotal = () => Math.round(liveCredits().reduce((x, c) => x + c.m, 0) * 1000) / 1000;
+const getPending = () => { try { return JSON.parse(store.get("pending", "null")); } catch { return null; } };
+
+function setHome(msg, warn = false) {
+  el.homeStatus.textContent = msg;
+  el.homeStatus.classList.toggle("warn", warn);
+}
 
 async function api(path, method = "GET", body) {
   if (!settings.worker || !settings.token) throw new Error("Worker-URL und Token in den Einstellungen eintragen.");
-  const r = await fetch(settings.worker.replace(/\/+$/, "") + path, {
-    method,
-    headers: { "Authorization": "Bearer " + settings.token, "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined
-  });
+  let r;
+  try {
+    r = await fetch(settings.worker.replace(/\/+$/, "") + path, {
+      method,
+      headers: { "Authorization": "Bearer " + settings.token, "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined
+    });
+  } catch {
+    throw new Error("Keine Verbindung zum Worker. Internet, Adresse und ALLOWED_ORIGIN prüfen.");
+  }
   const data = await r.json().catch(() => ({}));
   if (!r.ok) {
-    throw new Error(
+    const msg =
       data.error === "unauthorized" ? "Token falsch." :
       data.error === "bad_minutes" ? "Zu viele Minuten auf einmal (maximal " + data.max + ")." :
-      data.error === "upstream" ? "NextDNS hat nicht geantwortet." :
-      "Serverfehler (" + r.status + ")."
-    );
+      data.error === "insufficient" ? "Guthaben reicht nicht (nur " + fmtMin(data.total) + " Min)." :
+      data.error === "bank_full" ? "Guthaben-Obergrenze erreicht (maximal " + data.max + " Min)." :
+      data.error === "upstream" ? "NextDNS hat nicht geantwortet. Erneut senden ist sicher." :
+      "Serverfehler (" + r.status + ").";
+    throw Object.assign(new Error(msg), { retryable: r.status !== 400 });
   }
   return data;
+}
+
+function applyState(d) {
+  acct = { credits: d.credits || [], until: d.until || 0 };
+  offset = (d.now || Date.now()) - Date.now();
+  renderHome();
+}
+async function refreshStatus() {
+  if (!settings.worker || !settings.token || getPending()) return;
+  try { applyState(await api("/status")); } catch {}
+}
+
+function renderHome() {
+  const now = serverNow();
+  const live = liveCredits();
+  el.balance.textContent = fmtMin(liveTotal());
+  el.expiry.textContent = live.length
+    ? fmtMin(live[0].m) + " Min verfallen in " + fmtDur(live[0].exp - now) + "."
+    : "Gutschriften verfallen 24 Stunden nach dem Training.";
+  const left = acct.until - now;
+  el.unlockBox.classList.toggle("hidden", left <= 0);
+  if (left > 0) el.remaining.textContent = fmt(left);
+  const pending = getPending();
+  el.redeemBtn.disabled = !!pending;
+  el.retryBtn.classList.toggle("hidden", !(pending && pendingFailed));
+}
+
+function showHome() {
+  el.trainView.classList.add("hidden");
+  el.homeView.classList.remove("hidden");
+  renderHome();
+  clearInterval(homeTimer); homeTimer = setInterval(renderHome, 1000);
+}
+function showTrain() {
+  clearInterval(homeTimer);
+  el.homeView.classList.add("hidden");
+  el.trainView.classList.remove("hidden");
+  el.placeholder.classList.remove("hidden");
+  reps = 0; renderCount(); setStatus("Bereit.");
+}
+
+// Sendet die offene Gutschrift oder Einlösung. Die Anfrage-ID verhindert doppelte Verbuchung bei Wiederholung.
+async function sendPending() {
+  const p = getPending();
+  if (!p) return;
+  pendingFailed = false;
+  renderHome();
+  setHome("Sende ...");
+  try {
+    const d = await api(p.type === "earn" ? "/earn" : "/redeem", "POST", { minutes: p.minutes, requestId: p.requestId });
+    store.del("pending");
+    applyState(d);
+    setHome(p.type === "earn"
+      ? "+" + fmtMin(p.minutes) + " Min gutgeschrieben."
+      : fmtMin(p.minutes) + " Min eingelöst. Es kann bis zu einer Minute dauern, bis die Apps laufen.");
+  } catch (e) {
+    const label = p.type === "earn" ? "Gutschrift" : "Einlösen";
+    if (e.retryable === false) { store.del("pending"); refreshStatus(); }
+    else pendingFailed = true;
+    setHome(label + " fehlgeschlagen: " + e.message, true);
+    renderHome();
+  }
 }
 
 function finish() {
   if (reps < 1) { setStatus("Noch kein Liegestütz gezählt.", true); return; }
   stopCamera();
   doneJingle();
-  store.set("pending", JSON.stringify({ minutes: earnedMinutes(), requestId: newId() }));
-  showUnlocked();
+  store.set("pending", JSON.stringify({ type: "earn", minutes: earnedMinutes(), requestId: newId() }));
+  showHome();
   sendPending();
-}
-
-// Schickt die verdienten Minuten an den Worker. Die Anfrage-ID verhindert doppelte Gutschrift bei Wiederholung.
-async function sendPending() {
-  let p = null;
-  try { p = JSON.parse(store.get("pending", "null")); } catch {}
-  if (!p) return;
-  el.retryBtn.classList.add("hidden");
-  el.doneStatus.textContent = "Sende " + p.minutes + " Min an den Server ...";
-  try {
-    const d = await api("/unlock", "POST", { minutes: p.minutes, requestId: p.requestId });
-    store.set("unlockUntil", String(d.until));
-    store.del("pending");
-    el.doneStatus.textContent = "+" + p.minutes + " Min freigeschaltet. Es kann bis zu einer Minute dauern, bis die Apps wieder laufen.";
-    tick();
-  } catch (e) {
-    el.doneStatus.textContent = "Freischaltung fehlgeschlagen: " + e.message;
-    el.retryBtn.classList.remove("hidden");
-  }
-}
-
-function fmt(ms) {
-  const s = Math.max(0, Math.ceil(ms / 1000));
-  return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
-}
-function tick() {
-  if (store.get("pending", null)) { el.remaining.textContent = "--:--"; return; }
-  const left = +store.get("unlockUntil", 0) - Date.now();
-  if (left <= 0) {
-    clearInterval(timer); store.del("unlockUntil");
-    if (!running) showTraining("Die Freischaltung ist abgelaufen. Neue Runde?");
-    return;
-  }
-  el.remaining.textContent = fmt(left);
-}
-function showUnlocked() {
-  el.trainView.classList.add("hidden");
-  el.doneView.classList.remove("hidden");
-  tick(); clearInterval(timer); timer = setInterval(tick, 500);
-}
-function showTraining(msg) {
-  el.doneView.classList.add("hidden");
-  el.trainView.classList.remove("hidden");
-  el.placeholder.classList.remove("hidden");
-  reps = 0; renderCount();
-  setStatus(msg || "Bereit.");
 }
 
 el.start.addEventListener("click", startTraining);
 el.stop.addEventListener("click", abort);
 el.finishBtn.addEventListener("click", finish);
-el.moreBtn.addEventListener("click", () => showTraining("Bereit. Die Zeit wird oben drauf gerechnet."));
+el.back.addEventListener("click", showHome);
+el.trainBtn.addEventListener("click", showTrain);
 el.retryBtn.addEventListener("click", sendPending);
-el.resetBtn.addEventListener("click", async () => {
-  el.resetBtn.disabled = true;
-  try { await api("/lock", "POST"); }
-  catch (e) { el.doneStatus.textContent = "Sperren fehlgeschlagen: " + e.message; el.resetBtn.disabled = false; return; }
-  el.resetBtn.disabled = false;
-  clearInterval(timer); store.del("unlockUntil"); store.del("pending");
-  showTraining("Gesperrt.");
-});
-document.addEventListener("visibilitychange", async () => {
-  if (document.visibilityState === "visible" && running) { try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {} }
+
+document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
+  el.redeemInput.value = b.dataset.min === "all" ? fmtMin(liveTotal()) : b.dataset.min;
+}));
+
+el.redeemBtn.addEventListener("click", () => {
+  if (getPending()) return;
+  const m = parseFloat(String(el.redeemInput.value).replace(",", "."));
+  if (!(m > 0)) { setHome("Bitte Minuten eingeben.", true); return; }
+  if (m > liveTotal() + 0.01) { setHome("Guthaben reicht nicht (nur " + fmtMin(liveTotal()) + " Min).", true); return; }
+  store.set("pending", JSON.stringify({ type: "redeem", minutes: m, requestId: newId() }));
+  sendPending();
 });
 
-// Beim Start: Stand vom Server holen, offene Anfragen nachsenden
+el.lockBtn.addEventListener("click", async () => {
+  if (acct.until > serverNow() && !confirm("Jetzt wieder sperren? Die Restzeit der Freischaltung verfällt, das Guthaben bleibt.")) return;
+  el.lockBtn.disabled = true;
+  try { applyState(await api("/lock", "POST")); setHome("Gesperrt."); }
+  catch (e) { setHome("Sperren fehlgeschlagen: " + e.message, true); }
+  el.lockBtn.disabled = false;
+});
+
+document.addEventListener("visibilitychange", async () => {
+  if (document.visibilityState !== "visible") return;
+  if (running) { try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {} }
+  else if (!el.homeView.classList.contains("hidden")) refreshStatus();
+});
+
+// Start: Konto anzeigen, Stand vom Server holen, offene Anfragen nachsenden
 (async function init() {
-  if (settings.worker && settings.token && !store.get("pending", null)) {
-    try {
-      const d = await api("/status");
-      if (d.until && d.until > Date.now()) store.set("unlockUntil", String(d.until)); else store.del("unlockUntil");
-    } catch {}
-  }
-  if (store.get("pending", null)) { showUnlocked(); sendPending(); }
-  else if (+store.get("unlockUntil", 0) > Date.now()) showUnlocked();
+  showHome();
+  if (!settings.worker || !settings.token) setHome("Worker-URL und Token in den Einstellungen eintragen.", true);
+  else if (!getPending()) { try { applyState(await api("/status")); } catch (e) { setHome("Stand nicht abrufbar: " + e.message, true); } }
+  if (getPending()) sendPending();
 })();
 renderCount();
 </script>
