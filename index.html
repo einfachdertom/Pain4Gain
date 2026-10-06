@@ -34,20 +34,23 @@
   main { max-width: 520px; margin: 0 auto; }
   h1 { font-family: var(--display); font-weight: 700; font-size: 28px; letter-spacing: .01em; margin: 18px 0 14px; }
 
-  .counter { display: flex; align-items: baseline; gap: 10px; }
+  .counter { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
   .count {
     font-family: var(--display); font-weight: 700; font-size: 132px; line-height: .9;
     font-variant-numeric: tabular-nums; color: var(--ink);
   }
   .goal { font-family: var(--display); font-weight: 600; font-size: 40px; color: var(--muted); }
-  .bar { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; margin: 12px 0 16px; }
-  .bar > i { display: block; height: 100%; width: 0; background: var(--moss); transition: width .25s ease; }
 
+  /* Die Bühne folgt dem echten Seitenverhältnis des Kamerabilds (--ar), damit nichts verzerrt wird */
   .stage {
+    --ar: 1.3333;
     position: relative; background: #0E1613; border-radius: 12px; overflow: hidden;
-    aspect-ratio: 4 / 3; border: 1px solid var(--line);
+    width: min(100%, calc(62vh * var(--ar)));
+    aspect-ratio: var(--ar);
+    margin: 0 auto;
+    border: 1px solid var(--line);
   }
-  .stage canvas { width: 100%; height: 100%; display: block; object-fit: cover; }
+  .stage canvas { width: 100%; height: 100%; display: block; }
   .stage canvas.mirror { transform: scaleX(-1); }
   .stage .placeholder {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -57,7 +60,7 @@
 
   .status { min-height: 24px; margin: 12px 2px 4px; font-size: 15px; color: var(--muted); }
   .status.warn { color: var(--alert); font-weight: 500; }
-  .meta { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin: 0 2px 14px; font-variant-numeric: tabular-nums; }
+  .meta { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); margin: 0 2px 14px; font-variant-numeric: tabular-nums; }
 
   button {
     font: inherit; font-weight: 600; font-size: 17px; border: 0; border-radius: 10px;
@@ -68,7 +71,6 @@
   button:focus-visible, summary:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
   button.secondary { background: transparent; color: var(--ink); border: 1.5px solid var(--ink); margin-top: 10px; }
   button.secondary:active { background: rgba(22,35,31,.08); }
-  button.stop { background: var(--alert); }
 
   details { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 14px; }
   summary { font-weight: 600; cursor: pointer; padding: 6px 0; }
@@ -86,7 +88,16 @@
     font-variant-numeric: tabular-nums; color: var(--moss);
   }
   .hidden { display: none !important; }
-  @media (prefers-reduced-motion: reduce) { .bar > i { transition: none; } }
+
+  /* Querformat am Handy: kompakter, Bühne begrenzt */
+  @media (orientation: landscape) and (max-height: 520px) {
+    main { max-width: 900px; }
+    h1 { font-size: 20px; margin: 8px 0 6px; }
+    .count { font-size: 64px; }
+    .goal { font-size: 26px; }
+    .counter { margin-bottom: 8px; }
+    .stage { width: min(100%, calc(52vh * var(--ar))); }
+  }
 </style>
 </head>
 <body>
@@ -100,9 +111,9 @@
       <div class="goal">= <span id="minLabel">0</span> Min</div>
     </div>
 
-    <div class="stage">
+    <div class="stage" id="stage">
       <canvas id="canvas" width="640" height="480"></canvas>
-      <div class="placeholder" id="placeholder">Stell das Handy seitlich auf den Boden, etwa 1,5 m neben dich. Dein ganzer Körper muss im Bild sein.</div>
+      <div class="placeholder" id="placeholder">Stell das Handy (hochkant oder quer) auf den Boden, sodass die Kamera deine Körperseite filmt. Etwa 2 m Abstand, ganzer Körper im Bild, gutes Licht.</div>
       <video id="video" playsinline muted></video>
     </div>
 
@@ -124,10 +135,10 @@
       <label class="field">Kamera
         <select id="setCamera">
           <option value="user">Frontkamera</option>
-          <option value="environment">Rückkamera</option>
+          <option value="environment">Rückkamera (schärfer)</option>
         </select>
       </label>
-      <p class="hint">Mit "Fertig" ruft die Seite den Kurzbefehl auf und übergibt die verdienten Minuten als Text. Den Kurzbefehl baust du im nächsten Schritt.</p>
+      <p class="hint">Mit "Fertig" ruft die Seite den Kurzbefehl auf und übergibt die verdienten Minuten als Text.</p>
     </details>
   </section>
 
@@ -146,19 +157,21 @@
 import { PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
 
 const WASM = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
-const MODEL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
+const MODEL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task";
 
 // Schwellwerte (bei Bedarf feintunen)
-const ANGLE_DOWN = 100;     // Ellbogen unter diesem Winkel = unten
-const ANGLE_UP = 150;       // Ellbogen über diesem Winkel = oben
-const MAX_BODY_TILT = 40;   // Grad Abweichung von der Waagerechten
-const MIN_VISIBILITY = 0.5;
+const ANGLE_DOWN = 100;      // Ellbogen unter diesem Winkel = unten
+const ANGLE_UP = 150;        // Ellbogen über diesem Winkel = oben
+const MAX_BODY_TILT = 40;    // Grad Abweichung der Schulter-Hüft-Linie von der Waagerechten
+const MIN_VIS = 0.5;         // Mindest-Sichtbarkeit der Gelenke
 const MIN_REP_MS = 600;
+const ROTATE_AFTER = 30;     // Frames ohne gültige Pose, bis die Bilddrehung gewechselt wird
+const ROTATIONS = [0, 90, 270];
 
 const $ = id => document.getElementById(id);
 const el = {
   count: $("count"), minLabel: $("minLabel"),
-  canvas: $("canvas"), placeholder: $("placeholder"), video: $("video"),
+  stage: $("stage"), canvas: $("canvas"), placeholder: $("placeholder"), video: $("video"),
   status: $("status"), angle: $("angleLabel"), phase: $("phaseLabel"),
   start: $("startBtn"), stop: $("stopBtn"), finishBtn: $("finishBtn"), moreBtn: $("moreBtn"),
   setPerRep: $("setPerRep"), setShortcut: $("setShortcut"), setCamera: $("setCamera"),
@@ -166,6 +179,8 @@ const el = {
   doneStatus: $("doneStatus"), shortcutBtn: $("shortcutBtn"), resetBtn: $("resetBtn")
 };
 const ctx = el.canvas.getContext("2d");
+const rotCanvas = document.createElement("canvas");
+const rctx = rotCanvas.getContext("2d");
 
 // ---------- Einstellungen ----------
 const store = {
@@ -189,7 +204,6 @@ function applySettingsToUI() {
     if (num) { v = Math.max(0.5, parseFloat(String(v).replace(",", ".")) || 1); el[id].value = v; }
     settings[key] = v;
     store.set(key, v);
-    applySettingsToUI();
     renderCount();
   });
 });
@@ -198,17 +212,20 @@ applySettingsToUI();
 // ---------- Zustand ----------
 let landmarker = null, stream = null, running = false, rafId = 0, lastVideoTime = -1;
 let reps = 0, phase = "unknown", lastRepAt = 0, angleBuf = [], wakeLock = null, audioCtx = null;
+let rotIdx = 0, invalidStreak = 0, side = "left";
 
 function setStatus(msg, warn = false) {
   el.status.textContent = msg;
   el.status.classList.toggle("warn", warn);
 }
-function earnedMinutes() {
-  return Math.round(reps * settings.perRep * 10) / 10;
-}
+function earnedMinutes() { return Math.round(reps * settings.perRep * 10) / 10; }
 function renderCount() {
   el.count.textContent = reps;
   el.minLabel.textContent = earnedMinutes();
+}
+function renderPhase() {
+  const p = phase === "up" ? "oben" : phase === "down" ? "unten" : "-";
+  el.phase.textContent = p + " · Bild " + ROTATIONS[rotIdx] + "°";
 }
 
 // ---------- Ton ----------
@@ -224,93 +241,161 @@ function beep(freq = 660, dur = 0.09, vol = 0.18) {
 }
 function doneJingle() { beep(660, .12); setTimeout(() => beep(880, .12), 140); setTimeout(() => beep(1180, .25), 280); }
 
-// ---------- Geometrie ----------
-function angleDeg(a, b, c, w, h) {
-  const v1 = [(a.x - b.x) * w, (a.y - b.y) * h];
-  const v2 = [(c.x - b.x) * w, (c.y - b.y) * h];
-  const dot = v1[0]*v2[0] + v1[1]*v2[1];
+// ---------- Erkennung ----------
+const SIDES = {
+  left:  { sh: 11, el: 13, wr: 15, hip: 23, knee: 25, ank: 27 },
+  right: { sh: 12, el: 14, wr: 16, hip: 24, knee: 26, ank: 28 }
+};
+const NOSE = 0;
+
+// Erkennt das Modell eine Person im Liegestütz besser, wenn das Bild gedreht ist, wird gedreht.
+// Gibt Landmarks in Koordinaten des Originalbilds zurück (normiert 0..1).
+function detect(ts) {
+  const W = el.video.videoWidth, H = el.video.videoHeight;
+  const rot = ROTATIONS[rotIdx];
+  let src = el.video;
+  if (rot) {
+    rotCanvas.width = H; rotCanvas.height = W;
+    rctx.save();
+    if (rot === 90) { rctx.translate(H, 0); rctx.rotate(Math.PI / 2); }
+    else { rctx.translate(0, W); rctx.rotate(-Math.PI / 2); }
+    rctx.drawImage(el.video, 0, 0, W, H);
+    rctx.restore();
+    src = rotCanvas;
+  }
+  const res = landmarker.detectForVideo(src, ts);
+  const raw = res.landmarks && res.landmarks[0];
+  if (!raw) return null;
+  if (rot === 90)  return raw.map(p => ({ x: p.y,     y: 1 - p.x, visibility: p.visibility }));
+  if (rot === 270) return raw.map(p => ({ x: 1 - p.y, y: p.x,     visibility: p.visibility }));
+  return raw;
+}
+
+function sideScore(s, lm) {
+  return (lm[s.sh].visibility + lm[s.el].visibility + lm[s.wr].visibility + lm[s.hip].visibility + lm[s.ank].visibility) / 5;
+}
+// Seite mit Hysterese wählen, damit nicht zwischen links und rechts gesprungen wird
+function pickSide(lm) {
+  const l = sideScore(SIDES.left, lm), r = sideScore(SIDES.right, lm);
+  const cur = side === "left" ? l : r, other = side === "left" ? r : l;
+  if (other > cur + 0.15) side = side === "left" ? "right" : "left";
+  return SIDES[side];
+}
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+function angleAt(a, b, c) {
+  const v1 = [a.x - b.x, a.y - b.y], v2 = [c.x - b.x, c.y - b.y];
   const m = Math.hypot(...v1) * Math.hypot(...v2);
   if (!m) return null;
-  return Math.acos(Math.max(-1, Math.min(1, dot / m))) * 180 / Math.PI;
-}
-const SIDES = {
-  left:  { sh: 11, el: 13, wr: 15, hip: 23, ank: 27 },
-  right: { sh: 12, el: 14, wr: 16, hip: 24, ank: 28 }
-};
-function pickSide(lm) {
-  const score = s => (lm[s.sh].visibility + lm[s.el].visibility + lm[s.wr].visibility) / 3;
-  const l = score(SIDES.left), r = score(SIDES.right);
-  return l >= r ? { ...SIDES.left, vis: l } : { ...SIDES.right, vis: r };
+  return Math.acos(Math.max(-1, Math.min(1, (v1[0]*v2[0] + v1[1]*v2[1]) / m))) * 180 / Math.PI;
 }
 
-// ---------- Erkennung ----------
-function process(result) {
-  const lm = result.landmarks && result.landmarks[0];
-  if (!lm) { setStatus("Keine Person erkannt. Ganzen Körper ins Bild bringen.", true); el.angle.textContent = "-"; return; }
-
-  const w = el.canvas.width, h = el.canvas.height;
+// Prüft, ob die erkannten Punkte anatomisch zu einem Liegestütz passen.
+// Fängt Fehlerkennungen ab (Beine als Arme, Hintergrund als Körper).
+function validate(lm, W, H) {
   const s = pickSide(lm);
-  if (s.vis < MIN_VISIBILITY) { setStatus("Arm nicht sichtbar. Handy seitlich ausrichten.", true); el.angle.textContent = "-"; return; }
+  const P = i => ({ x: lm[i].x * W, y: lm[i].y * H });
+  const sh = P(s.sh), elb = P(s.el), wr = P(s.wr), hip = P(s.hip);
 
-  let ang = angleDeg(lm[s.sh], lm[s.el], lm[s.wr], w, h);
-  if (ang === null) return;
-  angleBuf.push(ang); if (angleBuf.length > 3) angleBuf.shift();
-  ang = angleBuf.reduce((a, b) => a + b, 0) / angleBuf.length;
-  el.angle.textContent = Math.round(ang) + "°";
+  const minVis = Math.min(lm[s.sh].visibility, lm[s.el].visibility, lm[s.wr].visibility, lm[s.hip].visibility);
+  if (minVis < MIN_VIS) return { ok: false, s, reason: "Arm oder Hüfte nicht klar sichtbar. Mehr Abstand, besseres Licht." };
 
-  // Körper muss grob waagerecht sein (Schulter zu Hüfte/Knöchel)
-  const ref = lm[s.ank].visibility > 0.4 ? lm[s.ank] : lm[s.hip];
-  const dx = Math.abs(ref.x - lm[s.sh].x) * w, dy = Math.abs(ref.y - lm[s.sh].y) * h;
-  const tilt = Math.atan2(dy, dx) * 180 / Math.PI;
-  if (tilt > MAX_BODY_TILT) {
-    setStatus("Geh in die Liegestütz-Position.", true);
-    el.phase.textContent = "-";
-    phase = "unknown";
-    return;
+  const upper = dist(sh, elb), fore = dist(elb, wr), torso = dist(sh, hip);
+  if (torso < 5 || upper < 3 || fore < 3) return { ok: false, s, reason: "Pose unklar. Ganzen Körper von der Seite zeigen." };
+
+  const r1 = upper / fore, r2 = upper / torso;
+  if (r1 < 0.5 || r1 > 2 || r2 < 0.3 || r2 > 1.5) return { ok: false, s, reason: "Pose unklar. Ganzen Körper von der Seite zeigen." };
+
+  // Kopf muss auf der Schulterseite liegen, Knöchel auf der Hüftseite
+  if (lm[NOSE].visibility > MIN_VIS) {
+    const nose = P(NOSE);
+    if (dist(nose, sh) > dist(nose, hip)) return { ok: false, s, reason: "Pose unklar. Ganzen Körper von der Seite zeigen." };
   }
-  setStatus("Läuft. Weiter so.");
+  if (lm[s.ank].visibility > MIN_VIS) {
+    if (dist(sh, P(s.ank)) < dist(sh, hip)) return { ok: false, s, reason: "Pose unklar. Ganzen Körper von der Seite zeigen." };
+  }
+
+  // Körper grob waagerecht
+  const tilt = Math.atan2(Math.abs(hip.y - sh.y), Math.abs(hip.x - sh.x)) * 180 / Math.PI;
+  if (tilt > MAX_BODY_TILT) return { ok: false, s, notPlank: true, reason: "Geh in die Liegestütz-Position." };
+
+  const angle = angleAt(sh, elb, wr);
+  if (angle === null) return { ok: false, s, reason: "Pose unklar." };
+  return { ok: true, s, angle };
+}
+
+function draw(lm, v, W, H) {
+  ctx.drawImage(el.video, 0, 0, W, H);
+  if (!lm || !v.s) return;
+  const s = v.s;
+  const lw = Math.max(3, W / 130);
+  ctx.lineWidth = lw; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.strokeStyle = v.ok ? "#F2B134" : "#B3362B";
+  const chains = [[s.sh, s.el, s.wr], [s.sh, s.hip, s.knee, s.ank]];
+  chains.forEach(ch => {
+    ctx.beginPath();
+    ch.forEach((i, k) => { const x = lm[i].x * W, y = lm[i].y * H; k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke();
+  });
+  ctx.fillStyle = "#EEF1EC";
+  chains.flat().forEach(i => { ctx.beginPath(); ctx.arc(lm[i].x * W, lm[i].y * H, lw * 1.2, 0, Math.PI * 2); ctx.fill(); });
+}
+
+function count(ang) {
+  angleBuf.push(ang); if (angleBuf.length > 3) angleBuf.shift();
+  const a = angleBuf.reduce((x, y) => x + y, 0) / angleBuf.length;
+  el.angle.textContent = Math.round(a) + "°";
 
   const now = performance.now();
-  if (phase === "unknown") { if (ang > ANGLE_UP) phase = "up"; }
-  else if (phase === "up") { if (ang < ANGLE_DOWN) phase = "down"; }
-  else if (phase === "down") {
-    if (ang > ANGLE_UP) {
-      phase = "up";
-      if (now - lastRepAt > MIN_REP_MS) {
-        lastRepAt = now;
-        reps++;
-        renderCount();
-        beep(reps % 5 === 0 ? 880 : 620);
-      }
+  if (phase === "unknown") { if (a > ANGLE_UP) phase = "up"; }
+  else if (phase === "up") { if (a < ANGLE_DOWN) phase = "down"; }
+  else if (phase === "down" && a > ANGLE_UP) {
+    phase = "up";
+    if (now - lastRepAt > MIN_REP_MS) {
+      lastRepAt = now;
+      reps++;
+      renderCount();
+      beep(reps % 5 === 0 ? 880 : 620);
     }
   }
-  el.phase.textContent = phase === "up" ? "oben" : phase === "down" ? "unten" : "-";
 }
 
-function draw(result) {
-  const w = el.canvas.width, h = el.canvas.height;
-  ctx.drawImage(el.video, 0, 0, w, h);
-  const lm = result.landmarks && result.landmarks[0];
-  if (!lm) return;
-  const s = pickSide(lm);
-  const pts = [s.sh, s.el, s.wr, s.hip, s.ank].map(i => lm[i]);
-  ctx.lineWidth = 5; ctx.lineCap = "round"; ctx.strokeStyle = "#F2B134";
-  ctx.beginPath();
-  pts.forEach((p, i) => { const x = p.x * w, y = p.y * h; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
-  ctx.stroke();
-  ctx.fillStyle = "#EEF1EC";
-  pts.forEach(p => { ctx.beginPath(); ctx.arc(p.x * w, p.y * h, 6, 0, Math.PI * 2); ctx.fill(); });
+function frame() {
+  const W = el.video.videoWidth, H = el.video.videoHeight;
+  if (!W || !H) return;
+  // Canvas und Bühne an das echte Bildformat anpassen (Drehung des Handys!)
+  if (el.canvas.width !== W || el.canvas.height !== H) {
+    el.canvas.width = W; el.canvas.height = H;
+    el.stage.style.setProperty("--ar", (W / H).toFixed(4));
+    angleBuf = []; phase = "unknown";
+  }
+
+  const lm = detect(performance.now());
+  const v = lm ? validate(lm, W, H) : { ok: false, reason: "Keine Person erkannt. Ganzen Körper ins Bild bringen." };
+  draw(lm, v, W, H);
+
+  if (v.ok) {
+    invalidStreak = 0;
+    setStatus("Läuft. Weiter so.");
+    count(v.angle);
+  } else {
+    invalidStreak++;
+    angleBuf = [];
+    el.angle.textContent = "-";
+    if (v.notPlank) phase = "unknown";
+    setStatus(v.reason, true);
+    if (invalidStreak >= ROTATE_AFTER) {
+      rotIdx = (rotIdx + 1) % ROTATIONS.length;
+      invalidStreak = 0; phase = "unknown";
+    }
+  }
+  renderPhase();
 }
 
 function loop() {
   if (!running) return;
   if (el.video.readyState >= 2 && el.video.currentTime !== lastVideoTime) {
     lastVideoTime = el.video.currentTime;
-    try {
-      const res = landmarker.detectForVideo(el.video, performance.now());
-      draw(res);
-      process(res);
-    } catch (e) { console.error(e); }
+    try { frame(); } catch (e) { console.error(e); }
   }
   rafId = requestAnimationFrame(loop);
 }
@@ -323,7 +408,7 @@ async function loadModel() {
   const make = delegate => PoseLandmarker.createFromOptions(fileset, {
     baseOptions: { modelAssetPath: MODEL, delegate },
     runningMode: "VIDEO", numPoses: 1,
-    minPoseDetectionConfidence: 0.5, minPosePresenceConfidence: 0.5, minTrackingConfidence: 0.5
+    minPoseDetectionConfidence: 0.6, minPosePresenceConfidence: 0.6, minTrackingConfidence: 0.6
   });
   try { landmarker = await make("GPU"); } catch { landmarker = await make("CPU"); }
 }
@@ -336,16 +421,15 @@ async function startTraining() {
     await loadModel();
     setStatus("Starte Kamera ...");
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: settings.camera, width: { ideal: 640 }, height: { ideal: 480 } }, audio: false
+      video: { facingMode: settings.camera, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false
     });
     el.video.srcObject = stream;
     await el.video.play();
-    el.canvas.width = el.video.videoWidth || 640;
-    el.canvas.height = el.video.videoHeight || 480;
     el.canvas.classList.toggle("mirror", settings.camera === "user");
     el.placeholder.classList.add("hidden");
 
     reps = 0; phase = "unknown"; angleBuf = []; lastRepAt = 0; lastVideoTime = -1;
+    rotIdx = 0; invalidStreak = 0;
     renderCount();
     try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {}
 
@@ -389,8 +473,7 @@ function abort() {
 }
 
 // ---------- Freischaltung ----------
-let timer = 0;
-let lastEarned = 0;
+let timer = 0, lastEarned = 0;
 function finish() {
   if (reps < 1) { setStatus("Noch kein Liegestütz gezählt.", true); return; }
   stopCamera();
@@ -404,9 +487,10 @@ function finish() {
 }
 
 function triggerShortcut() {
+  const mins = lastEarned || +store.get("lastEarned", 0);
   const url = "shortcuts://run-shortcut?name=" + encodeURIComponent(settings.shortcut) +
-              "&input=text&text=" + encodeURIComponent(String(lastEarned || +store.get("lastEarned", 0)));
-  el.doneStatus.textContent = "+" + (lastEarned || +store.get("lastEarned", 0)) + " Min verdient. Kurzbefehl wird aufgerufen. Falls nichts passiert, tippe auf den Button.";
+              "&input=text&text=" + encodeURIComponent(String(mins));
+  el.doneStatus.textContent = "+" + mins + " Min verdient. Kurzbefehl wird aufgerufen. Falls nichts passiert, tippe auf den Button.";
   window.location.href = url;
 }
 
@@ -415,9 +499,12 @@ function fmt(ms) {
   return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
 }
 function tick() {
-  const until = +store.get("unlockUntil", 0);
-  const left = until - Date.now();
-  if (left <= 0) { clearInterval(timer); store.del("unlockUntil"); if (!running) showTraining("Die Freischaltung ist abgelaufen. Neue Runde?"); return; }
+  const left = +store.get("unlockUntil", 0) - Date.now();
+  if (left <= 0) {
+    clearInterval(timer); store.del("unlockUntil");
+    if (!running) showTraining("Die Freischaltung ist abgelaufen. Neue Runde?");
+    return;
+  }
   el.remaining.textContent = fmt(left);
 }
 function showUnlocked() {
@@ -443,7 +530,6 @@ document.addEventListener("visibilitychange", async () => {
   if (document.visibilityState === "visible" && running) { try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {} }
 });
 
-// Beim Laden prüfen, ob noch eine Freischaltung läuft
 if (+store.get("unlockUntil", 0) > Date.now()) showUnlocked();
 renderCount();
 </script>
