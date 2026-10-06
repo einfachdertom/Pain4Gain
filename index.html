@@ -129,8 +129,11 @@
       <label class="field">Minuten pro Liegestütz
         <input id="setPerRep" type="number" inputmode="decimal" min="0.5" max="60" step="0.5" value="1">
       </label>
-      <label class="field">Name des Kurzbefehls
-        <input id="setShortcut" type="text" value="Freischalten" autocapitalize="off" autocorrect="off">
+      <label class="field">Worker-URL
+        <input id="setWorker" type="url" placeholder="https://liegestuetze.DEINNAME.workers.dev" autocapitalize="off" autocorrect="off">
+      </label>
+      <label class="field">Token
+        <input id="setToken" type="password" autocomplete="off" autocapitalize="off">
       </label>
       <label class="field">Kamera
         <select id="setCamera">
@@ -144,7 +147,7 @@
           <option value="lite">Schnell (mehr Bilder pro Sekunde)</option>
         </select>
       </label>
-      <p class="hint">Mit "Fertig" ruft die Seite den Kurzbefehl auf und übergibt die verdienten Minuten als Text.</p>
+      <p class="hint">Mit "Fertig" sendet die Seite die verdienten Minuten an deinen Worker, der die Sperre aufhebt. Der Token bleibt nur in diesem Browser gespeichert.</p>
     </details>
   </section>
 
@@ -153,9 +156,9 @@
     <p class="label">Freigeschaltet, noch</p>
     <div class="time" id="remaining">30:00</div>
     <p class="status" id="doneStatus"></p>
-    <button id="shortcutBtn">Kurzbefehl auslösen</button>
+    <button id="retryBtn" class="hidden">Erneut senden</button>
     <button id="moreBtn" class="secondary">Weiter trainieren</button>
-    <button id="resetBtn" class="secondary">Zurücksetzen</button>
+    <button id="resetBtn" class="secondary">Jetzt wieder sperren</button>
   </section>
 </main>
 
@@ -186,9 +189,9 @@ const el = {
   stage: $("stage"), canvas: $("canvas"), placeholder: $("placeholder"), video: $("video"),
   status: $("status"), angle: $("angleLabel"), low: $("lowLabel"), phase: $("phaseLabel"),
   start: $("startBtn"), stop: $("stopBtn"), finishBtn: $("finishBtn"), moreBtn: $("moreBtn"),
-  setPerRep: $("setPerRep"), setShortcut: $("setShortcut"), setCamera: $("setCamera"), setModel: $("setModel"),
+  setPerRep: $("setPerRep"), setWorker: $("setWorker"), setToken: $("setToken"), setCamera: $("setCamera"), setModel: $("setModel"),
   trainView: $("trainView"), doneView: $("doneView"), remaining: $("remaining"),
-  doneStatus: $("doneStatus"), shortcutBtn: $("shortcutBtn"), resetBtn: $("resetBtn")
+  doneStatus: $("doneStatus"), retryBtn: $("retryBtn"), resetBtn: $("resetBtn")
 };
 const ctx = el.canvas.getContext("2d");
 const rotCanvas = document.createElement("canvas");
@@ -202,20 +205,23 @@ const store = {
 };
 const settings = {
   perRep: +store.get("perRep", 1) || 1,
-  shortcut: store.get("shortcut", "Freischalten"),
+  worker: store.get("worker", ""),
+  token: store.get("token", ""),
   camera: store.get("camera", "user"),
   model: store.get("model", "full")
 };
 function applySettingsToUI() {
   el.setPerRep.value = settings.perRep;
-  el.setShortcut.value = settings.shortcut;
+  el.setWorker.value = settings.worker;
+  el.setToken.value = settings.token;
   el.setCamera.value = settings.camera;
   el.setModel.value = settings.model;
 }
-[["setPerRep","perRep",true],["setShortcut","shortcut",false],["setCamera","camera",false],["setModel","model",false]].forEach(([id,key,num]) => {
+[["setPerRep","perRep",true],["setWorker","worker",false],["setToken","token",false],["setCamera","camera",false],["setModel","model",false]].forEach(([id,key,num]) => {
   el[id].addEventListener("change", () => {
     let v = el[id].value;
     if (num) { v = Math.max(0.5, parseFloat(String(v).replace(",", ".")) || 1); el[id].value = v; }
+    if (!num) { v = String(v).trim(); el[id].value = v; }
     settings[key] = v;
     store.set(key, v);
     if (key === "model") { try { landmarker && landmarker.close(); } catch {} landmarker = null; }
@@ -530,25 +536,54 @@ function abort() {
 }
 
 // ---------- Freischaltung ----------
-let timer = 0, lastEarned = 0;
+let timer = 0;
+const newId = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(16).slice(2));
+
+async function api(path, method = "GET", body) {
+  if (!settings.worker || !settings.token) throw new Error("Worker-URL und Token in den Einstellungen eintragen.");
+  const r = await fetch(settings.worker.replace(/\/+$/, "") + path, {
+    method,
+    headers: { "Authorization": "Bearer " + settings.token, "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    throw new Error(
+      data.error === "unauthorized" ? "Token falsch." :
+      data.error === "bad_minutes" ? "Zu viele Minuten auf einmal (maximal " + data.max + ")." :
+      data.error === "upstream" ? "NextDNS hat nicht geantwortet." :
+      "Serverfehler (" + r.status + ")."
+    );
+  }
+  return data;
+}
+
 function finish() {
   if (reps < 1) { setStatus("Noch kein Liegestütz gezählt.", true); return; }
   stopCamera();
   doneJingle();
-  lastEarned = earnedMinutes();
-  const base = Math.max(Date.now(), +store.get("unlockUntil", 0));
-  store.set("unlockUntil", String(base + lastEarned * 60000));
-  store.set("lastEarned", String(lastEarned));
+  store.set("pending", JSON.stringify({ minutes: earnedMinutes(), requestId: newId() }));
   showUnlocked();
-  triggerShortcut();
+  sendPending();
 }
 
-function triggerShortcut() {
-  const mins = lastEarned || +store.get("lastEarned", 0);
-  const url = "shortcuts://run-shortcut?name=" + encodeURIComponent(settings.shortcut) +
-              "&input=text&text=" + encodeURIComponent(String(mins));
-  el.doneStatus.textContent = "+" + mins + " Min verdient. Kurzbefehl wird aufgerufen. Falls nichts passiert, tippe auf den Button.";
-  window.location.href = url;
+// Schickt die verdienten Minuten an den Worker. Die Anfrage-ID verhindert doppelte Gutschrift bei Wiederholung.
+async function sendPending() {
+  let p = null;
+  try { p = JSON.parse(store.get("pending", "null")); } catch {}
+  if (!p) return;
+  el.retryBtn.classList.add("hidden");
+  el.doneStatus.textContent = "Sende " + p.minutes + " Min an den Server ...";
+  try {
+    const d = await api("/unlock", "POST", { minutes: p.minutes, requestId: p.requestId });
+    store.set("unlockUntil", String(d.until));
+    store.del("pending");
+    el.doneStatus.textContent = "+" + p.minutes + " Min freigeschaltet. Es kann bis zu einer Minute dauern, bis die Apps wieder laufen.";
+    tick();
+  } catch (e) {
+    el.doneStatus.textContent = "Freischaltung fehlgeschlagen: " + e.message;
+    el.retryBtn.classList.remove("hidden");
+  }
 }
 
 function fmt(ms) {
@@ -556,6 +591,7 @@ function fmt(ms) {
   return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
 }
 function tick() {
+  if (store.get("pending", null)) { el.remaining.textContent = "--:--"; return; }
   const left = +store.get("unlockUntil", 0) - Date.now();
   if (left <= 0) {
     clearInterval(timer); store.del("unlockUntil");
@@ -581,13 +617,30 @@ el.start.addEventListener("click", startTraining);
 el.stop.addEventListener("click", abort);
 el.finishBtn.addEventListener("click", finish);
 el.moreBtn.addEventListener("click", () => showTraining("Bereit. Die Zeit wird oben drauf gerechnet."));
-el.shortcutBtn.addEventListener("click", triggerShortcut);
-el.resetBtn.addEventListener("click", () => { clearInterval(timer); store.del("unlockUntil"); showTraining("Zurückgesetzt."); });
+el.retryBtn.addEventListener("click", sendPending);
+el.resetBtn.addEventListener("click", async () => {
+  el.resetBtn.disabled = true;
+  try { await api("/lock", "POST"); }
+  catch (e) { el.doneStatus.textContent = "Sperren fehlgeschlagen: " + e.message; el.resetBtn.disabled = false; return; }
+  el.resetBtn.disabled = false;
+  clearInterval(timer); store.del("unlockUntil"); store.del("pending");
+  showTraining("Gesperrt.");
+});
 document.addEventListener("visibilitychange", async () => {
   if (document.visibilityState === "visible" && running) { try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {} }
 });
 
-if (+store.get("unlockUntil", 0) > Date.now()) showUnlocked();
+// Beim Start: Stand vom Server holen, offene Anfragen nachsenden
+(async function init() {
+  if (settings.worker && settings.token && !store.get("pending", null)) {
+    try {
+      const d = await api("/status");
+      if (d.until && d.until > Date.now()) store.set("unlockUntil", String(d.until)); else store.del("unlockUntil");
+    } catch {}
+  }
+  if (store.get("pending", null)) { showUnlocked(); sendPending(); }
+  else if (+store.get("unlockUntil", 0) > Date.now()) showUnlocked();
+})();
 renderCount();
 </script>
 </body>
