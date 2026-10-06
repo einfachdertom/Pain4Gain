@@ -169,8 +169,8 @@ const MODELS = {
 };
 
 // Schwellwerte (bei Bedarf feintunen)
-const ANGLE_DOWN = 110;      // Ellbogen unter diesem Winkel = unten
-const ANGLE_UP = 145;        // Ellbogen über diesem Winkel = oben
+const ANGLE_DOWN = 90;       // Startwert: Ellbogen unter diesem Winkel = unten (passt sich an)
+const ANGLE_UP = 125;        // Startwert: Ellbogen über diesem Winkel = oben (passt sich an)
 const MAX_BODY_TILT = 40;    // Grad Abweichung der Schulter-Hüft-Linie von der Waagerechten
 const MIN_VIS = 0.5;         // Mindest-Sichtbarkeit der Gelenke
 const MIN_REP_MS = 350;
@@ -226,7 +226,7 @@ applySettingsToUI();
 
 // ---------- Zustand ----------
 let landmarker = null, stream = null, running = false, rafId = 0, lastVideoTime = -1;
-let reps = 0, phase = "unknown", lastRepAt = 0, smooth = null, curMin = 999, wakeLock = null, audioCtx = null;
+let reps = 0, phase = "unknown", lastRepAt = 0, smooth = null, curMin = 999, curMax = 0, repMax = 0, topAvg = null, lowAvg = null, thrDown = ANGLE_DOWN, thrUp = ANGLE_UP, wakeLock = null, audioCtx = null;
 let rotIdx = 0, invalidStreak = 0, invalidRun = 0, side = "left";
 let fpsCount = 0, fpsT = performance.now(), fps = 0, loopToken = 0;
 
@@ -241,7 +241,7 @@ function renderCount() {
 }
 function renderPhase() {
   const p = phase === "up" ? "oben" : phase === "down" ? "unten" : "-";
-  el.phase.textContent = p + " · Bild " + ROTATIONS[rotIdx] + "° · " + fps + " fps";
+  el.phase.textContent = p + " · Schwellen " + Math.round(thrDown) + "/" + Math.round(thrUp) + "° · Bild " + ROTATIONS[rotIdx] + "° · " + fps + " fps";
 }
 
 // ---------- Ton ----------
@@ -356,26 +356,41 @@ function draw(lm, v, W, H) {
   chains.flat().forEach(i => { ctx.beginPath(); ctx.arc(lm[i].x * W, lm[i].y * H, lw * 1.2, 0, Math.PI * 2); ctx.fill(); });
 }
 
+// Schwellen aus dem eigenen Bewegungsumfang ableiten (2D-Seitenansicht erreicht selten 180°)
+const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
+function adapt(top, low) {
+  topAvg = topAvg === null ? top : 0.6 * topAvg + 0.4 * top;
+  lowAvg = lowAvg === null ? low : 0.6 * lowAvg + 0.4 * low;
+  const range = topAvg - lowAvg;
+  if (range < 40) return;
+  thrDown = clamp(lowAvg + 0.35 * range, 70, 105);
+  thrUp = clamp(lowAvg + 0.70 * range, 105, 150);
+}
+
 function count(ang) {
   smooth = smooth === null ? ang : SMOOTH * ang + (1 - SMOOTH) * smooth;
   const a = smooth;
   el.angle.textContent = Math.round(a) + "°";
 
   const now = performance.now();
-  if (phase === "unknown") { if (a > ANGLE_UP) phase = "up"; }
-  else if (phase === "up") { if (a < ANGLE_DOWN) { phase = "down"; curMin = a; } }
+  if (phase === "unknown") { if (a > thrUp) { phase = "up"; curMax = a; } }
+  else if (phase === "up") {
+    curMax = Math.max(curMax, a);
+    if (a < thrDown) { phase = "down"; repMax = curMax; curMin = a; }
+  }
   else if (phase === "down") {
     curMin = Math.min(curMin, a);
-    if (a > ANGLE_UP) {
+    if (a > thrUp) {
       phase = "up";
       if (now - lastRepAt > MIN_REP_MS) {
         lastRepAt = now;
         reps++;
         renderCount();
         el.low.textContent = Math.round(curMin) + "°";
+        adapt(repMax, curMin);
         beep(reps % 5 === 0 ? 880 : 620);
       }
-      curMin = 999;
+      curMin = 999; curMax = a;
     }
   }
 }
@@ -467,7 +482,8 @@ async function startTraining() {
     el.canvas.classList.toggle("mirror", settings.camera === "user");
     el.placeholder.classList.add("hidden");
 
-    reps = 0; phase = "unknown"; smooth = null; curMin = 999; lastRepAt = 0; lastVideoTime = -1;
+    reps = 0; phase = "unknown"; smooth = null; curMin = 999; curMax = 0; lastRepAt = 0; lastVideoTime = -1;
+    topAvg = null; lowAvg = null; thrDown = ANGLE_DOWN; thrUp = ANGLE_UP;
     rotIdx = 0; invalidStreak = 0; invalidRun = 0;
     el.low.textContent = "-";
     renderCount();
