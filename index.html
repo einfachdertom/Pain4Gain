@@ -60,7 +60,7 @@
 
   .status { min-height: 24px; margin: 12px 2px 4px; font-size: 15px; color: var(--muted); }
   .status.warn { color: var(--alert); font-weight: 500; }
-  .meta { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); margin: 0 2px 14px; font-variant-numeric: tabular-nums; }
+  .meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: 13px; color: var(--muted); margin: 0 2px 14px; font-variant-numeric: tabular-nums; }
 
   button {
     font: inherit; font-weight: 600; font-size: 17px; border: 0; border-radius: 10px;
@@ -118,7 +118,7 @@
     </div>
 
     <div class="status" id="status">Bereit.</div>
-    <div class="meta"><span>Ellbogenwinkel: <b id="angleLabel">-</b></span><span id="phaseLabel">-</span></div>
+    <div class="meta"><span>Winkel: <b id="angleLabel">-</b> · Tiefster: <b id="lowLabel">-</b></span><span id="phaseLabel">-</span></div>
 
     <button id="startBtn">Training starten</button>
     <button id="finishBtn" class="hidden">Fertig, Zeit freischalten</button>
@@ -136,6 +136,12 @@
         <select id="setCamera">
           <option value="user">Frontkamera</option>
           <option value="environment">Rückkamera (schärfer)</option>
+        </select>
+      </label>
+      <label class="field">Erkennung
+        <select id="setModel">
+          <option value="full">Genau (Standard)</option>
+          <option value="lite">Schnell (mehr Bilder pro Sekunde)</option>
         </select>
       </label>
       <p class="hint">Mit "Fertig" ruft die Seite den Kurzbefehl auf und übergibt die verdienten Minuten als Text.</p>
@@ -157,24 +163,30 @@
 import { PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
 
 const WASM = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
-const MODEL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task";
+const MODELS = {
+  full: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",
+  lite: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task"
+};
 
 // Schwellwerte (bei Bedarf feintunen)
-const ANGLE_DOWN = 100;      // Ellbogen unter diesem Winkel = unten
-const ANGLE_UP = 150;        // Ellbogen über diesem Winkel = oben
+const ANGLE_DOWN = 110;      // Ellbogen unter diesem Winkel = unten
+const ANGLE_UP = 145;        // Ellbogen über diesem Winkel = oben
 const MAX_BODY_TILT = 40;    // Grad Abweichung der Schulter-Hüft-Linie von der Waagerechten
 const MIN_VIS = 0.5;         // Mindest-Sichtbarkeit der Gelenke
-const MIN_REP_MS = 600;
+const MIN_REP_MS = 350;
 const ROTATE_AFTER = 30;     // Frames ohne gültige Pose, bis die Bilddrehung gewechselt wird
 const ROTATIONS = [0, 90, 270];
+const SMOOTH = 0.65;         // Gewicht des neuen Messwerts (1 = keine Glättung)
+const HOLD_FRAMES = 6;       // so viele ungültige Frames werden überbrückt, ohne den Zustand zu verlieren
+const RESET_FRAMES = 20;     // danach geht die Phase auf "unbekannt"
 
 const $ = id => document.getElementById(id);
 const el = {
   count: $("count"), minLabel: $("minLabel"),
   stage: $("stage"), canvas: $("canvas"), placeholder: $("placeholder"), video: $("video"),
-  status: $("status"), angle: $("angleLabel"), phase: $("phaseLabel"),
+  status: $("status"), angle: $("angleLabel"), low: $("lowLabel"), phase: $("phaseLabel"),
   start: $("startBtn"), stop: $("stopBtn"), finishBtn: $("finishBtn"), moreBtn: $("moreBtn"),
-  setPerRep: $("setPerRep"), setShortcut: $("setShortcut"), setCamera: $("setCamera"),
+  setPerRep: $("setPerRep"), setShortcut: $("setShortcut"), setCamera: $("setCamera"), setModel: $("setModel"),
   trainView: $("trainView"), doneView: $("doneView"), remaining: $("remaining"),
   doneStatus: $("doneStatus"), shortcutBtn: $("shortcutBtn"), resetBtn: $("resetBtn")
 };
@@ -191,19 +203,22 @@ const store = {
 const settings = {
   perRep: +store.get("perRep", 1) || 1,
   shortcut: store.get("shortcut", "Freischalten"),
-  camera: store.get("camera", "user")
+  camera: store.get("camera", "user"),
+  model: store.get("model", "full")
 };
 function applySettingsToUI() {
   el.setPerRep.value = settings.perRep;
   el.setShortcut.value = settings.shortcut;
   el.setCamera.value = settings.camera;
+  el.setModel.value = settings.model;
 }
-[["setPerRep","perRep",true],["setShortcut","shortcut",false],["setCamera","camera",false]].forEach(([id,key,num]) => {
+[["setPerRep","perRep",true],["setShortcut","shortcut",false],["setCamera","camera",false],["setModel","model",false]].forEach(([id,key,num]) => {
   el[id].addEventListener("change", () => {
     let v = el[id].value;
     if (num) { v = Math.max(0.5, parseFloat(String(v).replace(",", ".")) || 1); el[id].value = v; }
     settings[key] = v;
     store.set(key, v);
+    if (key === "model") { try { landmarker && landmarker.close(); } catch {} landmarker = null; }
     renderCount();
   });
 });
@@ -211,8 +226,9 @@ applySettingsToUI();
 
 // ---------- Zustand ----------
 let landmarker = null, stream = null, running = false, rafId = 0, lastVideoTime = -1;
-let reps = 0, phase = "unknown", lastRepAt = 0, angleBuf = [], wakeLock = null, audioCtx = null;
-let rotIdx = 0, invalidStreak = 0, side = "left";
+let reps = 0, phase = "unknown", lastRepAt = 0, smooth = null, curMin = 999, wakeLock = null, audioCtx = null;
+let rotIdx = 0, invalidStreak = 0, invalidRun = 0, side = "left";
+let fpsCount = 0, fpsT = performance.now(), fps = 0, loopToken = 0;
 
 function setStatus(msg, warn = false) {
   el.status.textContent = msg;
@@ -225,7 +241,7 @@ function renderCount() {
 }
 function renderPhase() {
   const p = phase === "up" ? "oben" : phase === "down" ? "unten" : "-";
-  el.phase.textContent = p + " · Bild " + ROTATIONS[rotIdx] + "°";
+  el.phase.textContent = p + " · Bild " + ROTATIONS[rotIdx] + "° · " + fps + " fps";
 }
 
 // ---------- Ton ----------
@@ -341,20 +357,25 @@ function draw(lm, v, W, H) {
 }
 
 function count(ang) {
-  angleBuf.push(ang); if (angleBuf.length > 3) angleBuf.shift();
-  const a = angleBuf.reduce((x, y) => x + y, 0) / angleBuf.length;
+  smooth = smooth === null ? ang : SMOOTH * ang + (1 - SMOOTH) * smooth;
+  const a = smooth;
   el.angle.textContent = Math.round(a) + "°";
 
   const now = performance.now();
   if (phase === "unknown") { if (a > ANGLE_UP) phase = "up"; }
-  else if (phase === "up") { if (a < ANGLE_DOWN) phase = "down"; }
-  else if (phase === "down" && a > ANGLE_UP) {
-    phase = "up";
-    if (now - lastRepAt > MIN_REP_MS) {
-      lastRepAt = now;
-      reps++;
-      renderCount();
-      beep(reps % 5 === 0 ? 880 : 620);
+  else if (phase === "up") { if (a < ANGLE_DOWN) { phase = "down"; curMin = a; } }
+  else if (phase === "down") {
+    curMin = Math.min(curMin, a);
+    if (a > ANGLE_UP) {
+      phase = "up";
+      if (now - lastRepAt > MIN_REP_MS) {
+        lastRepAt = now;
+        reps++;
+        renderCount();
+        el.low.textContent = Math.round(curMin) + "°";
+        beep(reps % 5 === 0 ? 880 : 620);
+      }
+      curMin = 999;
     }
   }
 }
@@ -362,27 +383,31 @@ function count(ang) {
 function frame() {
   const W = el.video.videoWidth, H = el.video.videoHeight;
   if (!W || !H) return;
-  // Canvas und Bühne an das echte Bildformat anpassen (Drehung des Handys!)
+
+  const t = performance.now();
+  fpsCount++;
+  if (t - fpsT >= 1000) { fps = Math.round(fpsCount * 1000 / (t - fpsT)); fpsCount = 0; fpsT = t; }
+
+  // Canvas und Bühne an das echte Bildformat anpassen (Drehung des Handys)
   if (el.canvas.width !== W || el.canvas.height !== H) {
     el.canvas.width = W; el.canvas.height = H;
     el.stage.style.setProperty("--ar", (W / H).toFixed(4));
-    angleBuf = []; phase = "unknown";
+    smooth = null; phase = "unknown";
   }
 
-  const lm = detect(performance.now());
+  const lm = detect(t);
   const v = lm ? validate(lm, W, H) : { ok: false, reason: "Keine Person erkannt. Ganzen Körper ins Bild bringen." };
   draw(lm, v, W, H);
 
   if (v.ok) {
-    invalidStreak = 0;
+    invalidStreak = 0; invalidRun = 0;
     setStatus("Läuft. Weiter so.");
     count(v.angle);
   } else {
-    invalidStreak++;
-    angleBuf = [];
-    el.angle.textContent = "-";
-    if (v.notPlank) phase = "unknown";
-    setStatus(v.reason, true);
+    invalidStreak++; invalidRun++;
+    // Kurze Aussetzer überbrücken, damit schnelle Wiederholungen nicht verloren gehen
+    if (invalidRun > HOLD_FRAMES) { smooth = null; el.angle.textContent = "-"; setStatus(v.reason, true); }
+    if (invalidRun > RESET_FRAMES) phase = "unknown";
     if (invalidStreak >= ROTATE_AFTER) {
       rotIdx = (rotIdx + 1) % ROTATIONS.length;
       invalidStreak = 0; phase = "unknown";
@@ -391,13 +416,27 @@ function frame() {
   renderPhase();
 }
 
+// Läuft pro echtem Kamerabild (requestVideoFrameCallback), sonst per requestAnimationFrame
 function loop() {
   if (!running) return;
-  if (el.video.readyState >= 2 && el.video.currentTime !== lastVideoTime) {
-    lastVideoTime = el.video.currentTime;
+  const token = ++loopToken;
+  const step = () => {
+    if (!running || token !== loopToken) return;
     try { frame(); } catch (e) { console.error(e); }
-  }
-  rafId = requestAnimationFrame(loop);
+    schedule();
+  };
+  const schedule = () => {
+    if (!running || token !== loopToken) return;
+    if (el.video.requestVideoFrameCallback) {
+      el.video.requestVideoFrameCallback(step);
+    } else {
+      rafId = requestAnimationFrame(() => {
+        if (el.video.readyState >= 2 && el.video.currentTime !== lastVideoTime) { lastVideoTime = el.video.currentTime; step(); }
+        else schedule();
+      });
+    }
+  };
+  schedule();
 }
 
 // ---------- Start / Stopp ----------
@@ -406,7 +445,7 @@ async function loadModel() {
   setStatus("Lade Erkennungsmodell ...");
   const fileset = await FilesetResolver.forVisionTasks(WASM);
   const make = delegate => PoseLandmarker.createFromOptions(fileset, {
-    baseOptions: { modelAssetPath: MODEL, delegate },
+    baseOptions: { modelAssetPath: MODELS[settings.model] || MODELS.full, delegate },
     runningMode: "VIDEO", numPoses: 1,
     minPoseDetectionConfidence: 0.6, minPosePresenceConfidence: 0.6, minTrackingConfidence: 0.6
   });
@@ -428,8 +467,9 @@ async function startTraining() {
     el.canvas.classList.toggle("mirror", settings.camera === "user");
     el.placeholder.classList.add("hidden");
 
-    reps = 0; phase = "unknown"; angleBuf = []; lastRepAt = 0; lastVideoTime = -1;
-    rotIdx = 0; invalidStreak = 0;
+    reps = 0; phase = "unknown"; smooth = null; curMin = 999; lastRepAt = 0; lastVideoTime = -1;
+    rotIdx = 0; invalidStreak = 0; invalidRun = 0;
+    el.low.textContent = "-";
     renderCount();
     try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {}
 
@@ -453,6 +493,7 @@ async function startTraining() {
 
 function stopCamera() {
   running = false;
+  loopToken++;
   cancelAnimationFrame(rafId);
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
   try { wakeLock && wakeLock.release(); } catch {}
@@ -467,7 +508,7 @@ function abort() {
   stopCamera();
   el.placeholder.classList.remove("hidden");
   ctx.clearRect(0, 0, el.canvas.width, el.canvas.height);
-  el.angle.textContent = "-"; el.phase.textContent = "-";
+  el.angle.textContent = "-"; el.phase.textContent = "-"; el.low.textContent = "-";
   setStatus("Abgebrochen. Der Zähler wurde zurückgesetzt.");
   reps = 0; renderCount();
 }
