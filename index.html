@@ -24,7 +24,7 @@
     --open: #2F6B4F; --on-open: #FFFFFF; --alert: #B3362B; --focus: #F2B134; --stage: #0E1613;
     --display: "Barlow Condensed", "Arial Narrow", Impact, sans-serif;
     --body: "Barlow", -apple-system, "Helvetica Neue", Arial, sans-serif;
-    --dw: 700; --count: 132px; --goal: 40px; --r: 10px; --rc: 12px; --bw: 1.5px;
+    --dw: 700; --count: 132px; --goal: 40px; --tile: 34px; --series2: #E0A21A; --r: 10px; --rc: 12px; --bw: 1.5px;
     color-scheme: light;
   }
   /* Plakat: Signalgelb, Schwarz, harte Schatten, Warnband als Zustandsanzeige */
@@ -34,7 +34,7 @@
     --open: #00A651; --on-open: #000000; --alert: #D10F00; --focus: #D10F00; --stage: #000000;
     --display: "Anton", Impact, "Arial Narrow", sans-serif;
     --body: "Archivo", -apple-system, "Helvetica Neue", Arial, sans-serif;
-    --dw: 400; --count: 150px; --goal: 46px; --r: 0px; --rc: 0px; --bw: 3px;
+    --dw: 400; --count: 150px; --goal: 46px; --tile: 40px; --series2: #D10F00; --r: 0px; --rc: 0px; --bw: 3px;
   }
   /* Anzeigetafel: Dunkelblau, Bernstein-LED, Lampe für gesperrt und frei */
   html[data-theme="tafel"] {
@@ -43,7 +43,7 @@
     --open: #35D07F; --on-open: #062A17; --alert: #FF6B5B; --focus: #FFB000; --stage: #050C14;
     --display: "Orbitron", "Arial Narrow", sans-serif;
     --body: "Saira", -apple-system, "Helvetica Neue", Arial, sans-serif;
-    --dw: 700; --count: 88px; --goal: 24px; --r: 8px; --rc: 12px; --bw: 1.5px;
+    --dw: 700; --count: 88px; --goal: 24px; --tile: 20px; --series2: #5AA9FF; --r: 8px; --rc: 12px; --bw: 1.5px;
     color-scheme: dark;
   }
 
@@ -141,6 +141,30 @@
   .hint { font-size: 13px; color: var(--muted); line-height: 1.5; margin: 18px 2px 0; }
   .hidden { display: none !important; }
 
+  /* ---- Historie ---- */
+  h2 { font-family: var(--display); font-weight: var(--dw); font-size: 24px; margin: 0; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 14px 0 12px; }
+  button.back { width: auto; margin: 0; padding: 8px 16px; font-size: 15px; }
+  .seg { margin: 0 0 6px; }
+  button.chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .hcard { margin-top: 18px; }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .tile .k { font-size: 12.5px; color: var(--muted); }
+  .tile .v { font-family: var(--display); font-weight: var(--dw); font-size: var(--tile); line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .chart h3 { font-size: 15px; font-weight: 600; margin: 0 0 6px; color: var(--muted); }
+  .chart svg { display: block; width: 100%; height: auto; }
+  .chart .bar.s1 { fill: var(--accent); }
+  .chart .bar.s2 { fill: var(--series2); }
+  .chart .axis { stroke: var(--ink); stroke-width: 1.5; }
+  .chart .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
+  .chart text { font-family: var(--body); fill: var(--muted); font-size: 10px; }
+  .chart text.val { fill: var(--ink); font-weight: 600; }
+  table.hist { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  table.hist th { text-align: left; color: var(--muted); font-weight: 600; padding: 4px 0 8px; }
+  table.hist td { padding: 8px 0; border-top: var(--bw) solid var(--line); }
+  table.hist th:not(:first-child), table.hist td:not(:first-child) { text-align: right; padding-left: 10px; }
+  table.hist tr.zero td { color: var(--muted); }
+
   /* ---- Plakat ---- */
   html[data-theme="plakat"] h1 { font-size: 42px; text-transform: uppercase; letter-spacing: .02em; line-height: 1; margin: 16px 0 12px; }
   html[data-theme="plakat"] .card { background: var(--surface); border: 3px solid #000; box-shadow: 5px 5px 0 #000; padding: 14px 16px; margin-top: 14px; }
@@ -156,9 +180,15 @@
   html[data-theme="plakat"] button { font-family: var(--display); font-weight: 400; font-size: 21px; letter-spacing: .06em; text-transform: uppercase; padding: 14px 18px 12px; }
   html[data-theme="plakat"] button.secondary { background: #fff; color: #000; box-shadow: 4px 4px 0 #000; }
   html[data-theme="plakat"] button.secondary:active { background: #fff; transform: translate(3px, 3px); box-shadow: 1px 1px 0 #000; }
+  html[data-theme="plakat"] h2 { font-size: 32px; text-transform: uppercase; letter-spacing: .02em; line-height: 1; }
+  html[data-theme="plakat"] button.chip[aria-pressed="true"] { background: #000; color: #FFD21F; }
+  html[data-theme="plakat"] .chart .bar { stroke: #000; stroke-width: 2; }
+  html[data-theme="plakat"] .chart h3 { color: #000; font-weight: 700; }
   html[data-theme="plakat"] button.chip { font-family: var(--body); font-weight: 700; font-size: 16px; letter-spacing: 0; text-transform: none; background: #fff; padding: 10px 6px; }
 
   /* ---- Anzeigetafel ---- */
+  html[data-theme="tafel"] h2 { font-size: 16px; letter-spacing: .14em; }
+  html[data-theme="tafel"] .tile .v { color: var(--accent); }
   html[data-theme="tafel"] h1 { font-size: 20px; letter-spacing: .14em; margin: 16px 0 10px; }
   html[data-theme="tafel"] .card {
     background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--rc);
@@ -221,6 +251,7 @@
     <p class="status" id="homeStatus"></p>
     <button id="retryBtn" class="hidden">Erneut senden</button>
     <button id="trainBtn" class="secondary">Training</button>
+    <button id="histBtn" class="secondary">Historie</button>
     <button id="lockBtn" class="secondary">Jetzt wieder sperren</button>
 
     <details>
@@ -255,6 +286,23 @@
       </label>
       <p class="hint">Training schreibt Minuten gut. Das gesamte Guthaben wird täglich um 4 Uhr gelöscht. Wer morgens aufsteht, startet bei 0. Der Token bleibt nur in diesem Browser gespeichert.</p>
     </details>
+  </section>
+
+  <!-- Historie -->
+  <section id="historyView" class="hidden">
+    <div class="topbar">
+      <button id="histBack" class="back secondary">Zurück</button>
+      <h2>Historie</h2>
+    </div>
+    <div class="chips seg" id="rangeSeg" role="group" aria-label="Zeitraum">
+      <button class="chip" data-range="day" aria-pressed="true">Tag</button>
+      <button class="chip" data-range="week" aria-pressed="false">Woche</button>
+      <button class="chip" data-range="month" aria-pressed="false">Monat</button>
+      <button class="chip" data-range="year" aria-pressed="false">Jahr</button>
+    </div>
+    <p class="sub" id="histRange"></p>
+    <p class="status" id="histStatus"></p>
+    <div id="histBody"></div>
   </section>
 
   <!-- Training -->
@@ -316,7 +364,9 @@ const el = {
   homeView: $("homeView"), trainView: $("trainView"),
   balance: $("balance"), expiry: $("expiryInfo"), creditList: $("creditList"), stateText: $("stateText"), unlockBox: $("unlockBox"), remaining: $("remaining"),
   redeemInput: $("redeemInput"), redeemBtn: $("redeemBtn"), homeStatus: $("homeStatus"),
-  retryBtn: $("retryBtn"), trainBtn: $("trainBtn"), lockBtn: $("lockBtn")
+  retryBtn: $("retryBtn"), trainBtn: $("trainBtn"), lockBtn: $("lockBtn"),
+  histBtn: $("histBtn"), histBack: $("histBack"), historyView: $("historyView"), rangeSeg: $("rangeSeg"),
+  histRange: $("histRange"), histStatus: $("histStatus"), histBody: $("histBody")
 };
 const ctx = el.canvas.getContext("2d");
 const rotCanvas = document.createElement("canvas");
@@ -756,6 +806,7 @@ function renderHome() {
 }
 
 function showHome() {
+  el.historyView.classList.add("hidden");
   el.trainView.classList.add("hidden");
   el.homeView.classList.remove("hidden");
   renderHome();
@@ -763,6 +814,7 @@ function showHome() {
 }
 function showTrain() {
   clearInterval(homeTimer);
+  el.historyView.classList.add("hidden");
   el.homeView.classList.add("hidden");
   el.trainView.classList.remove("hidden");
   el.placeholder.classList.remove("hidden");
@@ -777,8 +829,9 @@ async function sendPending() {
   renderHome();
   setHome("Sende ...");
   try {
-    const d = await api(p.type === "earn" ? "/earn" : "/redeem", "POST", { minutes: p.minutes, requestId: p.requestId });
+    const d = await api(p.type === "earn" ? "/earn" : "/redeem", "POST", { minutes: p.minutes, reps: p.reps, requestId: p.requestId });
     store.del("pending");
+    histData = null;
     applyState(d);
     setHome(p.type === "earn"
       ? "+" + fmtMin(p.minutes) + " Min gutgeschrieben."
@@ -797,10 +850,162 @@ function finish() {
   if (reps < 1) { setStatus("Noch kein Liegestütz gezählt.", true); return; }
   stopCamera();
   doneJingle();
-  store.set("pending", JSON.stringify({ type: "earn", minutes: earnedMinutes(), requestId: newId() }));
+  store.set("pending", JSON.stringify({ type: "earn", minutes: earnedMinutes(), reps, requestId: newId() }));
   showHome();
   sendPending();
 }
+
+// ---------- Historie ----------
+const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+const MON = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+const MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+const RANGE_TEXT = { day: "Letzte 14 Tage", week: "Letzte 12 Wochen", month: "Letzte 12 Monate", year: "Letzte 3 Jahre" };
+const nf = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 });
+const fmtNum = x => nf.format(Math.round(x * 10) / 10);
+const pad2 = n => String(n).padStart(2, "0");
+const parseKey = k => { const [y, m, d] = k.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
+const keyOf = dt => dt.toISOString().slice(0, 10);
+const addDays = (dt, n) => new Date(dt.getTime() + n * 864e5);
+const dmy = dt => pad2(dt.getUTCDate()) + "." + pad2(dt.getUTCMonth() + 1) + ".";
+
+function isoWeek(dt) {
+  const monday = addDays(dt, -((dt.getUTCDay() + 6) % 7));
+  const year = addDays(monday, 3).getUTCFullYear();
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const week1 = addDays(jan4, -((jan4.getUTCDay() + 6) % 7));
+  return { year, week: 1 + Math.round((monday - week1) / (7 * 864e5)), monday };
+}
+
+// Tageswerte zu Balken zusammenfassen: r = Push-ups, e = verdiente Minuten, u = eingelöste Minuten
+function buildSeries(range, days, todayKey) {
+  const T = parseKey(todayKey), items = [];
+  const sumDays = (from, count) => {
+    const o = { r: 0, e: 0, u: 0 };
+    for (let i = 0; i < count; i++) { const d = days[keyOf(addDays(from, i))]; if (d) { o.r += d.r || 0; o.e += d.e || 0; o.u += d.u || 0; } }
+    return o;
+  };
+  const sumPrefix = prefix => {
+    const o = { r: 0, e: 0, u: 0 };
+    for (const k of Object.keys(days)) if (k.startsWith(prefix)) { o.r += days[k].r || 0; o.e += days[k].e || 0; o.u += days[k].u || 0; }
+    return o;
+  };
+  if (range === "day") {
+    for (let i = 13; i >= 0; i--) {
+      const dt = addDays(T, -i);
+      items.push({ l1: WD[dt.getUTCDay()], l2: String(dt.getUTCDate()), name: WD[dt.getUTCDay()] + " " + dmy(dt), ...sumDays(dt, 1) });
+    }
+  } else if (range === "week") {
+    const cur = isoWeek(T).monday;
+    for (let i = 11; i >= 0; i--) {
+      const mon = addDays(cur, -7 * i), w = isoWeek(mon);
+      items.push({ l1: "KW", l2: String(w.week), name: "KW " + w.week + ", " + dmy(mon) + " bis " + dmy(addDays(mon, 6)), ...sumDays(mon, 7) });
+    }
+  } else if (range === "month") {
+    for (let i = 11; i >= 0; i--) {
+      const dt = new Date(Date.UTC(T.getUTCFullYear(), T.getUTCMonth() - i, 1));
+      const y = dt.getUTCFullYear(), m = dt.getUTCMonth();
+      items.push({ l1: MON[m], l2: (m === 0 || i === 11) ? String(y) : "", name: MONTHS[m] + " " + y, ...sumPrefix(y + "-" + pad2(m + 1)) });
+    }
+  } else {
+    for (let i = 2; i >= 0; i--) {
+      const y = T.getUTCFullYear() - i;
+      items.push({ l1: String(y), l2: "", name: String(y), ...sumPrefix(y + "-") });
+    }
+  }
+  return items;
+}
+
+function niceMax(v) {
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  for (const m of [1, 1.5, 2, 3, 4, 5, 6, 8, 10]) if (v <= m * p) return m * p;
+  return 10 * p;
+}
+
+// Beschriftung über dem Balken; lange Zahlen werden gekürzt (2.156 wird 2,2k), damit sie sich nicht berühren
+function valueLabel(v, step) {
+  const full = fmtNum(v);
+  if (full.length * 5.8 <= step - 2 || v < 1000) return full;
+  return (Math.round(v / 100) / 10).toString().replace(".", ",") + "k";
+}
+
+// Balkendiagramm als SVG, Farben kommen aus dem gewählten Design
+function barChart(items, key, cls, title) {
+  const W = 340, H = 132, L = 4, R = 4, T = 18, B = 30;
+  const max = niceMax(Math.max(1, ...items.map(i => i[key])));
+  const n = items.length, step = (W - L - R) / n, bw = Math.min(26, step * 0.64);
+  const base = H - B, ph = base - T;
+  let g = '<line class="axis" x1="' + L + '" x2="' + (W - R) + '" y1="' + base + '" y2="' + base + '"/>' +
+          '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + (base - ph / 2) + '" y2="' + (base - ph / 2) + '"/>';
+  items.forEach((it, i) => {
+    const v = it[key], cx = L + step * (i + 0.5), h = v > 0 ? Math.max(2, v / max * ph) : 0;
+    if (h) g += '<rect class="bar ' + cls + '" x="' + (cx - bw / 2).toFixed(1) + '" y="' + (base - h).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '"/>';
+    if (v > 0 && step >= 18) g += '<text class="val" x="' + cx.toFixed(1) + '" y="' + (base - h - 4).toFixed(1) + '" text-anchor="middle">' + valueLabel(v, step) + '</text>';
+    g += '<text x="' + cx.toFixed(1) + '" y="' + (base + 12) + '" text-anchor="middle">' + it.l1 + '</text>';
+    if (it.l2) g += '<text x="' + cx.toFixed(1) + '" y="' + (base + 24) + '" text-anchor="middle">' + it.l2 + '</text>';
+  });
+  const label = title + ": " + items.map(i => i.name + " " + fmtNum(i[key])).join(", ");
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + label + '">' + g + '</svg>';
+}
+
+let histData = null, histRange = store.get("histRange", "day");
+if (!RANGE_TEXT[histRange]) histRange = "day";
+
+// Beispieldaten für die Demo-Ansicht (fest berechnet, damit jede Vorschau gleich aussieht)
+function demoHistory() {
+  const t = new Date(); const today = new Date(Date.UTC(t.getFullYear(), t.getMonth(), t.getDate()));
+  const days = {};
+  for (let i = 0; i < 420; i++) {
+    const dt = addDays(today, -i), seed = (i * 37 + 11) % 100;
+    if (seed < 22) continue;                                   // freie Tage
+    const r = 20 + ((seed * 7 + i * 3) % 90);
+    days[keyOf(dt)] = { r, e: r, u: Math.round(r * (0.35 + ((seed % 6) / 10))) };
+  }
+  return { today: keyOf(today), days, resetHour: 4 };
+}
+
+function renderHistory() {
+  if (!histData) return;
+  const items = buildSeries(histRange, histData.days || {}, histData.today);
+  const tot = items.reduce((a, i) => ({ r: a.r + i.r, e: a.e + i.e, u: a.u + i.u }), { r: 0, e: 0, u: 0 });
+  const used = tot.e > 0 ? Math.round(tot.u / tot.e * 100) + " %" : "-";
+  el.histRange.textContent = RANGE_TEXT[histRange];
+  el.rangeSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.range === histRange)));
+
+  const rows = items.slice().reverse().map(i =>
+    '<tr class="' + (i.r || i.u ? "" : "zero") + '"><td>' + i.name + '</td><td>' + fmtNum(i.r) + '</td><td>' + fmtNum(i.u) + '</td></tr>').join("");
+
+  el.histBody.innerHTML =
+    '<div class="card hcard"><div class="tiles">' +
+      '<div class="tile"><div class="k">Push-ups</div><div class="v">' + fmtNum(tot.r) + '</div></div>' +
+      '<div class="tile"><div class="k">Eingelöst (Min)</div><div class="v">' + fmtNum(tot.u) + '</div></div>' +
+      '<div class="tile"><div class="k">Genutzt</div><div class="v">' + used + '</div></div>' +
+    '</div></div>' +
+    '<div class="card hcard chart"><h3>Push-ups</h3>' + barChart(items, "r", "s1", "Push-ups") + '</div>' +
+    '<div class="card hcard chart"><h3>Eingelöste Minuten</h3>' + barChart(items, "u", "s2", "Eingelöste Minuten") + '</div>' +
+    '<div class="card hcard"><table class="hist"><thead><tr><th>Zeitraum</th><th>Push-ups</th><th>Eingelöst (Min)</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<p class="hint">Genutzt = eingelöste Minuten im Verhältnis zu den verdienten. Ein Tag läuft von ' + (histData.resetHour ?? 4) + ' bis ' + (histData.resetHour ?? 4) + ' Uhr, passend zum Reset des Guthabens.</p>';
+}
+
+async function showHistory() {
+  clearInterval(homeTimer);
+  el.homeView.classList.add("hidden");
+  el.trainView.classList.add("hidden");
+  el.historyView.classList.remove("hidden");
+  window.scrollTo(0, 0);
+  el.histStatus.textContent = "";
+  el.histStatus.classList.remove("warn");
+  if (DEMO) { histData = demoHistory(); renderHistory(); return; }
+  if (!histData) el.histBody.innerHTML = "";
+  el.histStatus.textContent = "Lade Historie ...";
+  try { histData = await api("/history"); el.histStatus.textContent = ""; renderHistory(); }
+  catch (e) { el.histStatus.textContent = "Historie nicht abrufbar: " + e.message; el.histStatus.classList.add("warn"); renderHistory(); }
+}
+
+el.histBtn.addEventListener("click", showHistory);
+el.histBack.addEventListener("click", showHome);
+el.rangeSeg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+  histRange = b.dataset.range; store.set("histRange", histRange); renderHistory();
+}));
 
 el.start.addEventListener("click", startTraining);
 el.stop.addEventListener("click", abort);
