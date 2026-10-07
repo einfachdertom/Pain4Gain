@@ -1,54 +1,97 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" data-theme="halle">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Liegestütz-Schlüssel">
-<meta name="color-scheme" content="light">
-<title>Liegestütz-Schlüssel</title>
+<meta name="apple-mobile-web-app-title" content="Pain4Gain">
+<meta name="theme-color" content="#EEF1EC">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="favicon.png">
+<title>Pain4Gain</title>
+<script>
+  // Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt
+  try { var t = localStorage.getItem("theme"); document.documentElement.setAttribute("data-theme", ["halle","plakat","tafel"].indexOf(t) > -1 ? t : "halle"); } catch (e) {}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=Anton&family=Archivo:wght@400;500;600;700&family=Orbitron:wght@500;700&family=Saira:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --paper: #EEF1EC;
-    --ink: #16231F;
-    --muted: #5B6B65;
-    --moss: #2F6B4F;
-    --moss-dark: #22513B;
-    --amber: #F2B134;
-    --alert: #B3362B;
-    --line: #C9D2CB;
-    --surface: #FFFFFF;
+  /* Drei Designs. Alle Farben, Schriften und Formen kommen aus diesen Variablen. */
+  :root {                       /* Standard: Halle (hell, ruhig) */
+    --bg: #EEF1EC; --surface: #FFFFFF; --ink: #16231F; --muted: #5B6B65; --line: #C9D2CB;
+    --accent: #2F6B4F; --accent-press: #22513B; --on-accent: #FFFFFF;
+    --open: #2F6B4F; --on-open: #FFFFFF; --alert: #B3362B; --focus: #F2B134; --stage: #0E1613;
     --display: "Barlow Condensed", "Arial Narrow", Impact, sans-serif;
     --body: "Barlow", -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --dw: 700; --count: 132px; --goal: 40px; --r: 10px; --rc: 12px; --bw: 1.5px;
+    color-scheme: light;
   }
+  /* Plakat: Signalgelb, Schwarz, harte Schatten, Warnband als Zustandsanzeige */
+  html[data-theme="plakat"] {
+    --bg: #FFD21F; --surface: #FFFFFF; --ink: #000000; --muted: #3B3200; --line: #000000;
+    --accent: #000000; --accent-press: #2A2A2A; --on-accent: #FFD21F;
+    --open: #00A651; --on-open: #000000; --alert: #D10F00; --focus: #D10F00; --stage: #000000;
+    --display: "Anton", Impact, "Arial Narrow", sans-serif;
+    --body: "Archivo", -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --dw: 400; --count: 150px; --goal: 46px; --r: 0px; --rc: 0px; --bw: 3px;
+  }
+  /* Anzeigetafel: Dunkelblau, Bernstein-LED, Lampe für gesperrt und frei */
+  html[data-theme="tafel"] {
+    --bg: #0F1B2A; --surface: #08121D; --ink: #DCE6F0; --muted: #8398AD; --line: #27405C;
+    --accent: #FFB000; --accent-press: #D99500; --on-accent: #0F1B2A;
+    --open: #35D07F; --on-open: #062A17; --alert: #FF6B5B; --focus: #FFB000; --stage: #050C14;
+    --display: "Orbitron", "Arial Narrow", sans-serif;
+    --body: "Saira", -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --dw: 700; --count: 88px; --goal: 24px; --r: 8px; --rc: 12px; --bw: 1.5px;
+    color-scheme: dark;
+  }
+
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--body); }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); }
   body {
     min-height: 100%;
     padding: env(safe-area-inset-top, 0px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px);
     -webkit-text-size-adjust: 100%;
   }
   main { max-width: 520px; margin: 0 auto; }
-  h1 { font-family: var(--display); font-weight: 700; font-size: 28px; letter-spacing: .01em; margin: 18px 0 14px; }
+  h1 { font-family: var(--display); font-weight: var(--dw); font-size: 28px; letter-spacing: .01em; margin: 18px 0 14px; }
 
+  .card { }
+  .redeem { margin-top: 20px; }
+  html[data-theme="plakat"] .card.redeem, html[data-theme="tafel"] .card.redeem { margin-top: 14px; }
+  .label { font-size: 15px; color: var(--muted); margin: 6px 0 2px; }
   .counter { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .card .counter { margin-bottom: 0; }
   .count {
-    font-family: var(--display); font-weight: 700; font-size: 132px; line-height: .9;
-    font-variant-numeric: tabular-nums; color: var(--ink);
+    font-family: var(--display); font-weight: var(--dw); font-size: var(--count); line-height: .9;
+    font-variant-numeric: tabular-nums;
   }
-  .goal { font-family: var(--display); font-weight: 600; font-size: 40px; color: var(--muted); }
+  .goal { font-family: var(--display); font-weight: var(--dw); font-size: var(--goal); color: var(--muted); }
+  .sub { font-size: 14px; color: var(--muted); margin: 6px 2px 0; }
+  .sub:empty { display: none; }
 
-  /* Die Bühne folgt dem echten Seitenverhältnis des Kamerabilds (--ar), damit nichts verzerrt wird */
+  .credits { list-style: none; margin: 10px 0 0; padding: 0; font-size: 14px; color: var(--muted); }
+  .credits:empty { display: none; }
+  .credits li {
+    display: flex; justify-content: space-between; gap: 12px; padding: 7px 0;
+    border-top: var(--bw) solid var(--line); font-variant-numeric: tabular-nums;
+  }
+  .credits b { color: var(--ink); font-weight: 600; }
+
+  /* Zustandsanzeige: nur in Plakat und Anzeigetafel sichtbar */
+  .state { display: none; }
+  .lamp { width: 12px; height: 12px; border-radius: 50%; background: var(--alert); box-shadow: 0 0 10px var(--alert); flex: none; }
+  html[data-lock="open"] .lamp { background: var(--open); box-shadow: 0 0 10px var(--open); }
+
+  /* Die Bühne folgt dem echten Seitenverhältnis des Kamerabilds (--ar) */
   .stage {
     --ar: 1.3333;
-    position: relative; background: #0E1613; border-radius: 12px; overflow: hidden;
+    position: relative; background: var(--stage); border-radius: var(--rc); overflow: hidden;
     width: min(100%, calc(62vh * var(--ar)));
     aspect-ratio: var(--ar);
-    margin: 0 auto;
-    border: 1px solid var(--line);
+    margin: 12px auto 0;
+    border: var(--bw) solid var(--line);
   }
   .stage canvas { width: 100%; height: 100%; display: block; }
   .stage canvas.mirror { transform: scaleX(-1); }
@@ -63,81 +106,109 @@
   .meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: 13px; color: var(--muted); margin: 0 2px 14px; font-variant-numeric: tabular-nums; }
 
   button {
-    font: inherit; font-weight: 600; font-size: 17px; border: 0; border-radius: 10px;
-    padding: 15px 18px; width: 100%; cursor: pointer; background: var(--moss); color: #fff;
+    font: inherit; font-weight: 600; font-size: 17px; width: 100%; cursor: pointer;
+    border: var(--bw) solid var(--accent); border-radius: var(--r);
+    padding: 15px 18px; background: var(--accent); color: var(--on-accent);
     -webkit-tap-highlight-color: transparent;
   }
-  button:active { background: var(--moss-dark); }
-  button:focus-visible, summary:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
-  button.secondary { background: transparent; color: var(--ink); border: 1.5px solid var(--ink); margin-top: 10px; }
-  button.secondary:active { background: rgba(22,35,31,.08); }
+  button:active { background: var(--accent-press); border-color: var(--accent-press); }
+  button:focus-visible, summary:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  button.secondary { background: transparent; color: var(--ink); border-color: var(--ink); margin-top: 10px; }
+  button.secondary:active { background: rgba(127,127,127,.16); }
+  button:disabled { opacity: .5; cursor: default; }
 
-  details { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 14px; }
-  summary { font-weight: 600; cursor: pointer; padding: 6px 0; }
-  .field { display: block; margin: 14px 0 0; font-size: 14px; color: var(--muted); }
-  .field input, .field select {
-    display: block; width: 100%; margin-top: 6px; font: inherit; font-size: 16px; color: var(--ink);
-    padding: 11px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface);
-  }
-  .hint { font-size: 13px; color: var(--muted); line-height: 1.5; margin: 18px 2px 0; }
-
-  .unlocked { text-align: left; padding-top: 6px; }
-  .unlocked .label { font-size: 15px; color: var(--muted); margin: 0 0 4px; }
-  .unlocked .time {
-    font-family: var(--display); font-weight: 700; font-size: 120px; line-height: .95;
-    font-variant-numeric: tabular-nums; color: var(--moss);
-  }
-  .hidden { display: none !important; }
-
-  .label { font-size: 15px; color: var(--muted); margin: 6px 0 2px; }
-  .sub { font-size: 14px; color: var(--muted); margin: 6px 2px 0; min-height: 20px; }
-  .unlockbox {
-    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
-    background: var(--moss); color: #fff; border-radius: 12px; padding: 12px 16px; margin: 16px 0 4px;
-  }
-  .unlockbox .time { font-family: var(--display); font-weight: 700; font-size: 44px; line-height: 1; font-variant-numeric: tabular-nums; }
-  .redeem { margin-top: 20px; }
+  .redeem .field { margin-top: 0; }
   .chips { display: flex; gap: 8px; margin: 10px 0 12px; }
   button.chip {
     flex: 1; width: auto; padding: 10px 6px; font-size: 15px; font-weight: 500;
-    background: transparent; color: var(--ink); border: 1.5px solid var(--line); border-radius: 8px;
+    background: transparent; color: var(--ink); border: var(--bw) solid var(--line); border-radius: var(--r);
   }
-  button.chip:active { background: rgba(22,35,31,.08); }
-  button:disabled { opacity: .5; cursor: default; }
+  button.chip:active { background: rgba(127,127,127,.18); }
+
+  .unlockbox {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    background: var(--open); color: var(--on-open); border-radius: var(--rc); padding: 12px 16px; margin: 16px 0 4px;
+  }
+  .unlockbox .time { font-family: var(--display); font-weight: var(--dw); font-size: 44px; line-height: 1; font-variant-numeric: tabular-nums; }
+
+  details { margin-top: 22px; border-top: var(--bw) solid var(--line); padding-top: 14px; }
+  summary { font-weight: 600; cursor: pointer; padding: 6px 0; }
+  .field { display: block; margin: 14px 0 0; font-size: 14px; color: var(--muted); }
+  input, select {
+    display: block; width: 100%; margin-top: 6px; font: inherit; font-size: 16px; color: var(--ink);
+    padding: 11px 12px; border: var(--bw) solid var(--line); border-radius: var(--r); background: var(--surface);
+  }
+  .hint { font-size: 13px; color: var(--muted); line-height: 1.5; margin: 18px 2px 0; }
+  .hidden { display: none !important; }
+
+  /* ---- Plakat ---- */
+  html[data-theme="plakat"] h1 { font-size: 42px; text-transform: uppercase; letter-spacing: .02em; line-height: 1; margin: 16px 0 12px; }
+  html[data-theme="plakat"] .card { background: var(--surface); border: 3px solid #000; box-shadow: 5px 5px 0 #000; padding: 14px 16px; margin-top: 14px; }
+  html[data-theme="plakat"] .card .label { margin-top: 0; font-weight: 700; color: #000; }
+  html[data-theme="plakat"] .stage { box-shadow: 5px 5px 0 #000; }
+  html[data-theme="plakat"] .unlockbox { border: 3px solid #000; box-shadow: 5px 5px 0 #000; }
+  html[data-theme="plakat"] .state {
+    display: block; height: 18px; border: 3px solid #000; margin: 0 0 4px;
+    background: repeating-linear-gradient(135deg, #000 0 14px, var(--bg) 14px 28px);
+  }
+  html[data-theme="plakat"][data-lock="open"] .state { background: repeating-linear-gradient(135deg, var(--open) 0 14px, #fff 14px 28px); }
+  html[data-theme="plakat"] .state > * { display: none; }
+  html[data-theme="plakat"] button { font-family: var(--display); font-weight: 400; font-size: 21px; letter-spacing: .06em; text-transform: uppercase; padding: 14px 18px 12px; }
+  html[data-theme="plakat"] button.secondary { background: #fff; color: #000; box-shadow: 4px 4px 0 #000; }
+  html[data-theme="plakat"] button.secondary:active { background: #fff; transform: translate(3px, 3px); box-shadow: 1px 1px 0 #000; }
+  html[data-theme="plakat"] button.chip { font-family: var(--body); font-weight: 700; font-size: 16px; letter-spacing: 0; text-transform: none; background: #fff; padding: 10px 6px; }
+
+  /* ---- Anzeigetafel ---- */
+  html[data-theme="tafel"] h1 { font-size: 20px; letter-spacing: .14em; margin: 16px 0 10px; }
+  html[data-theme="tafel"] .card {
+    background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--rc);
+    padding: 16px; margin-top: 14px; box-shadow: inset 0 0 28px rgba(0,0,0,.55);
+  }
+  html[data-theme="tafel"] .card .label { margin-top: 0; }
+  html[data-theme="tafel"] .count { color: var(--accent); text-shadow: 0 0 18px rgba(255,176,0,.5); }
+  html[data-theme="tafel"] .unlockbox .time { font-size: 30px; }
+  html[data-theme="tafel"] .state { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); margin: 0 0 4px; }
+  html[data-theme="tafel"] button { font-weight: 700; letter-spacing: .03em; }
+  html[data-theme="tafel"] button.secondary { border-color: #4A6585; }
+  html[data-theme="tafel"] button.chip { border-color: #4A6585; }
+  html[data-theme="tafel"] .stage { border-color: #4A6585; }
 
   /* Querformat am Handy: kompakter, Bühne begrenzt */
   @media (orientation: landscape) and (max-height: 520px) {
     main { max-width: 900px; }
-    h1 { font-size: 20px; margin: 8px 0 6px; }
-    .count { font-size: 64px; }
-    .goal { font-size: 26px; }
-    .counter { margin-bottom: 8px; }
+    html[data-theme] h1 { font-size: 20px; margin: 8px 0 6px; }
+    .count { font-size: calc(var(--count) * .5); }
+    .goal { font-size: calc(var(--goal) * .65); }
     .stage { width: min(100%, calc(52vh * var(--ar))); }
   }
 </style>
 </head>
 <body>
 <main>
-  <h1>Liegestütz-Schlüssel</h1>
+  <h1>Pain4Gain</h1>
 
   <!-- Konto: Guthaben, Einlösen, Einstellungen -->
   <section id="homeView">
-    <p class="label">Guthaben</p>
-    <div class="counter">
-      <div class="count" id="balance" aria-live="polite">0</div>
-      <div class="goal">Min</div>
+    <div class="state" id="stateBar" aria-hidden="true"><span class="lamp"></span><span id="stateText">Gesperrt</span></div>
+
+    <div class="card">
+      <p class="label">Guthaben</p>
+      <div class="counter">
+        <div class="count" id="balance" aria-live="polite">0</div>
+        <div class="goal">Min</div>
+      </div>
+      <p class="sub" id="expiryInfo"></p>
+      <ul class="credits" id="creditList"></ul>
     </div>
-    <p class="sub" id="expiryInfo"></p>
 
     <div class="unlockbox hidden" id="unlockBox">
       <span>Freigeschaltet, noch</span>
       <span class="time" id="remaining">00:00</span>
     </div>
 
-    <div class="redeem">
-      <label class="field" for="redeemInput" style="margin-top:0">Minuten einlösen</label>
-      <input id="redeemInput" type="number" inputmode="decimal" min="1" step="1" value="15"
-             style="display:block;width:100%;font:inherit;font-size:16px;color:var(--ink);padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);margin-top:6px">
+    <div class="card redeem">
+      <label class="field" for="redeemInput">Minuten einlösen</label>
+      <input id="redeemInput" type="number" inputmode="decimal" min="1" step="1" value="15">
       <div class="chips">
         <button class="chip" data-min="15">15</button>
         <button class="chip" data-min="30">30</button>
@@ -154,6 +225,13 @@
 
     <details>
       <summary>Einstellungen</summary>
+      <label class="field">Design
+        <select id="setTheme">
+          <option value="halle">Halle (hell, ruhig)</option>
+          <option value="plakat">Plakat (gelb, laut)</option>
+          <option value="tafel">Anzeigetafel (dunkel)</option>
+        </select>
+      </label>
       <label class="field">Minuten pro Liegestütz
         <input id="setPerRep" type="number" inputmode="decimal" min="0.5" max="60" step="0.5" value="1">
       </label>
@@ -175,15 +253,17 @@
           <option value="lite">Schnell (mehr Bilder pro Sekunde)</option>
         </select>
       </label>
-      <p class="hint">Training schreibt Minuten gut. Jede Gutschrift verfällt 24 Stunden nach dem Training. Beim Einlösen werden die ältesten Minuten zuerst verbraucht. Der Token bleibt nur in diesem Browser gespeichert.</p>
+      <p class="hint">Training schreibt Minuten gut. Das gesamte Guthaben wird täglich um 4 Uhr gelöscht. Wer morgens aufsteht, startet bei 0. Der Token bleibt nur in diesem Browser gespeichert.</p>
     </details>
   </section>
 
   <!-- Training -->
   <section id="trainView" class="hidden">
-    <div class="counter">
-      <div class="count" id="count" aria-live="polite">0</div>
-      <div class="goal">= <span id="minLabel">0</span> Min</div>
+    <div class="card">
+      <div class="counter">
+        <div class="count" id="count" aria-live="polite">0</div>
+        <div class="goal">= <span id="minLabel">0</span> Min</div>
+      </div>
     </div>
 
     <div class="stage" id="stage">
@@ -223,15 +303,18 @@ const SMOOTH = 0.65;         // Gewicht des neuen Messwerts (1 = keine Glättung
 const HOLD_FRAMES = 6;       // so viele ungültige Frames werden überbrückt, ohne den Zustand zu verlieren
 const RESET_FRAMES = 20;     // danach geht die Phase auf "unbekannt"
 
+const DEMO = new URLSearchParams(location.search).get("demo") === "1";   // Vorschau mit Beispieldaten
+const THEMES = { halle: "#EEF1EC", plakat: "#FFD21F", tafel: "#0F1B2A" };   // Farbe für die Statusleiste
+
 const $ = id => document.getElementById(id);
 const el = {
   count: $("count"), minLabel: $("minLabel"),
   stage: $("stage"), canvas: $("canvas"), placeholder: $("placeholder"), video: $("video"),
   status: $("status"), angle: $("angleLabel"), low: $("lowLabel"), phase: $("phaseLabel"),
   start: $("startBtn"), stop: $("stopBtn"), finishBtn: $("finishBtn"), back: $("backBtn"),
-  setPerRep: $("setPerRep"), setWorker: $("setWorker"), setToken: $("setToken"), setCamera: $("setCamera"), setModel: $("setModel"),
+  setTheme: $("setTheme"), setPerRep: $("setPerRep"), setWorker: $("setWorker"), setToken: $("setToken"), setCamera: $("setCamera"), setModel: $("setModel"),
   homeView: $("homeView"), trainView: $("trainView"),
-  balance: $("balance"), expiry: $("expiryInfo"), unlockBox: $("unlockBox"), remaining: $("remaining"),
+  balance: $("balance"), expiry: $("expiryInfo"), creditList: $("creditList"), stateText: $("stateText"), unlockBox: $("unlockBox"), remaining: $("remaining"),
   redeemInput: $("redeemInput"), redeemBtn: $("redeemBtn"), homeStatus: $("homeStatus"),
   retryBtn: $("retryBtn"), trainBtn: $("trainBtn"), lockBtn: $("lockBtn")
 };
@@ -246,6 +329,7 @@ const store = {
   del(k) { try { localStorage.removeItem(k); } catch {} }
 };
 const settings = {
+  theme: THEMES[store.get("theme", "halle")] ? store.get("theme", "halle") : "halle",
   perRep: +store.get("perRep", 1) || 1,
   worker: store.get("worker", ""),
   token: store.get("token", ""),
@@ -253,24 +337,32 @@ const settings = {
   model: store.get("model", "full")
 };
 function applySettingsToUI() {
+  el.setTheme.value = settings.theme;
   el.setPerRep.value = settings.perRep;
   el.setWorker.value = settings.worker;
   el.setToken.value = settings.token;
   el.setCamera.value = settings.camera;
   el.setModel.value = settings.model;
 }
-[["setPerRep","perRep",true],["setWorker","worker",false],["setToken","token",false],["setCamera","camera",false],["setModel","model",false]].forEach(([id,key,num]) => {
+[["setTheme","theme",false],["setPerRep","perRep",true],["setWorker","worker",false],["setToken","token",false],["setCamera","camera",false],["setModel","model",false]].forEach(([id,key,num]) => {
   el[id].addEventListener("change", () => {
     let v = el[id].value;
     if (num) { v = Math.max(0.5, parseFloat(String(v).replace(",", ".")) || 1); el[id].value = v; }
     if (!num) { v = String(v).trim(); el[id].value = v; }
     settings[key] = v;
     store.set(key, v);
+    if (key === "theme") applyTheme();
     if (key === "model") { try { landmarker && landmarker.close(); } catch {} landmarker = null; }
     renderCount();
   });
 });
+function applyTheme() {
+  document.documentElement.setAttribute("data-theme", settings.theme);
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.setAttribute("content", THEMES[settings.theme]);
+}
 applySettingsToUI();
+applyTheme();
 
 // ---------- Zustand ----------
 let landmarker = null, stream = null, running = false, rafId = 0, lastVideoTime = -1;
@@ -591,7 +683,7 @@ function fmtDur(ms) {
   return h ? h + " h " + (m % 60) + " min" : m + " min";
 }
 
-let acct = { credits: [], until: 0 }, offset = 0, pendingFailed = false, homeTimer = 0;
+let acct = { credits: [], until: 0, resetHour: 4 }, offset = 0, pendingFailed = false, homeTimer = 0;
 const serverNow = () => Date.now() + offset;
 const liveCredits = () => acct.credits.filter(c => c.exp > serverNow());
 const liveTotal = () => Math.round(liveCredits().reduce((x, c) => x + c.m, 0) * 1000) / 1000;
@@ -603,6 +695,7 @@ function setHome(msg, warn = false) {
 }
 
 async function api(path, method = "GET", body) {
+  if (DEMO) throw new Error("Demo-Ansicht: keine Verbindung zum Worker.");
   if (!settings.worker || !settings.token) throw new Error("Worker-URL und Token in den Einstellungen eintragen.");
   let r;
   try {
@@ -629,11 +722,12 @@ async function api(path, method = "GET", body) {
 }
 
 function applyState(d) {
-  acct = { credits: d.credits || [], until: d.until || 0 };
+  acct = { credits: d.credits || [], until: d.until || 0, resetHour: d.resetHour ?? 4 };
   offset = (d.now || Date.now()) - Date.now();
   renderHome();
 }
 async function refreshStatus() {
+  if (DEMO) return;
   if (!settings.worker || !settings.token || getPending()) return;
   try { applyState(await api("/status")); } catch {}
 }
@@ -641,13 +735,21 @@ async function refreshStatus() {
 function renderHome() {
   const now = serverNow();
   const live = liveCredits();
-  el.balance.textContent = fmtMin(liveTotal());
-  el.expiry.textContent = live.length
-    ? fmtMin(live[0].m) + " Min verfallen in " + fmtDur(live[0].exp - now) + "."
-    : "Gutschriften verfallen 24 Stunden nach dem Training.";
   const left = acct.until - now;
+  el.balance.textContent = fmtMin(liveTotal());
+  el.expiry.textContent = live.length ? "" : "Das Guthaben wird täglich um " + acct.resetHour + " Uhr gelöscht.";
+  // Gutschriften mit gleichem Ablauf zusammenfassen
+  const groups = [];
+  for (const c of live) {
+    const g = groups.find(x => x.exp === c.exp);
+    if (g) g.m += c.m; else groups.push({ m: c.m, exp: c.exp });
+  }
+  el.creditList.innerHTML = groups.slice(0, 5)
+    .map(g => "<li><b>" + fmtMin(g.m) + " Min</b><span>gelöscht in " + fmtDur(g.exp - now) + " (" + acct.resetHour + " Uhr)</span></li>").join("");
   el.unlockBox.classList.toggle("hidden", left <= 0);
   if (left > 0) el.remaining.textContent = fmt(left);
+  document.documentElement.setAttribute("data-lock", left > 0 ? "open" : "locked");
+  el.stateText.textContent = left > 0 ? "Freigeschaltet" : "Gesperrt";
   const pending = getPending();
   el.redeemBtn.disabled = !!pending;
   el.retryBtn.classList.toggle("hidden", !(pending && pendingFailed));
@@ -691,6 +793,7 @@ async function sendPending() {
 }
 
 function finish() {
+  if (DEMO) { stopCamera(); showHome(); setHome("Demo-Ansicht: es wird nichts gutgeschrieben."); return; }
   if (reps < 1) { setStatus("Noch kein Liegestütz gezählt.", true); return; }
   stopCamera();
   doneJingle();
@@ -711,6 +814,7 @@ document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () =
 }));
 
 el.redeemBtn.addEventListener("click", () => {
+  if (DEMO) { setHome("Demo-Ansicht: es wird nichts eingelöst."); return; }
   if (getPending()) return;
   const m = parseFloat(String(el.redeemInput.value).replace(",", "."));
   if (!(m > 0)) { setHome("Bitte Minuten eingeben.", true); return; }
@@ -736,6 +840,12 @@ document.addEventListener("visibilitychange", async () => {
 // Start: Konto anzeigen, Stand vom Server holen, offene Anfragen nachsenden
 (async function init() {
   showHome();
+  if (DEMO) {
+    const n = Date.now();
+    applyState({ now: n, until: n + 27 * 60000, credits: [{ m: 60, exp: n + 6.5 * 3600e3 }, { m: 40, exp: n + 6.5 * 3600e3 }], resetHour: 4 });
+    setHome("Demo-Ansicht mit Beispieldaten. Es wird nichts gesendet.");
+    return;
+  }
   if (!settings.worker || !settings.token) setHome("Worker-URL und Token in den Einstellungen eintragen.", true);
   else if (!getPending()) { try { applyState(await api("/status")); } catch (e) { setHome("Stand nicht abrufbar: " + e.message, true); } }
   if (getPending()) sendPending();
