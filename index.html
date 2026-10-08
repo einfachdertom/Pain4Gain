@@ -11,7 +11,7 @@
 <title>Pain4Gain</title>
 <script>
   // Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt
-  try { var t = localStorage.getItem("theme"); document.documentElement.setAttribute("data-theme", ["halle","plakat","tafel"].indexOf(t) > -1 ? t : "halle"); } catch (e) {}
+  try { var t = localStorage.getItem("theme"); document.documentElement.setAttribute("data-theme", ["halle","eisen","tafel"].indexOf(t) > -1 ? t : "halle"); } catch (e) {}
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,14 +27,15 @@
     --dw: 700; --count: 132px; --goal: 40px; --tile: 34px; --series2: #E0A21A; --r: 10px; --rc: 12px; --bw: 1.5px;
     color-scheme: light;
   }
-  /* Plakat: Signalgelb, Schwarz, harte Schatten, Warnband als Zustandsanzeige */
-  html[data-theme="plakat"] {
-    --bg: #FFD21F; --surface: #FFFFFF; --ink: #000000; --muted: #3B3200; --line: #000000;
-    --accent: #000000; --accent-press: #2A2A2A; --on-accent: #FFD21F;
-    --open: #00A651; --on-open: #000000; --alert: #D10F00; --focus: #D10F00; --stage: #000000;
+  /* Eisen: Graphit mit Rot, ruhig und kraftvoll, ohne Banner und harte Schatten */
+  html[data-theme="eisen"] {
+    --bg: #161616; --surface: #202020; --ink: #F2EFEA; --muted: #9A958E; --line: #343230;
+    --accent: #E5483B; --accent-press: #C93A2E; --on-accent: #FFFFFF;
+    --open: #3BC47A; --on-open: #07230F; --alert: #FF7A6B; --focus: #F2EFEA; --stage: #0B0B0B;
     --display: "Anton", Impact, "Arial Narrow", sans-serif;
     --body: "Archivo", -apple-system, "Helvetica Neue", Arial, sans-serif;
-    --dw: 400; --count: 150px; --goal: 46px; --tile: 40px; --series2: #D10F00; --r: 0px; --rc: 0px; --bw: 3px;
+    --dw: 400; --count: 120px; --goal: 36px; --tile: 34px; --series2: #F2EFEA; --r: 12px; --rc: 14px; --bw: 1.5px;
+    color-scheme: dark;
   }
   /* Anzeigetafel: Dunkelblau, Bernstein-LED, Lampe für gesperrt und frei */
   html[data-theme="tafel"] {
@@ -59,7 +60,7 @@
 
   .card { }
   .redeem { margin-top: 20px; }
-  html[data-theme="plakat"] .card.redeem, html[data-theme="tafel"] .card.redeem { margin-top: 14px; }
+  html[data-theme="eisen"] .card.redeem, html[data-theme="tafel"] .card.redeem { margin-top: 14px; }
   .label { font-size: 15px; color: var(--muted); margin: 6px 0 2px; }
   .counter { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
   .card .counter { margin-bottom: 0; }
@@ -79,7 +80,7 @@
   }
   .credits b { color: var(--ink); font-weight: 600; }
 
-  /* Zustandsanzeige: nur in Plakat und Anzeigetafel sichtbar */
+  /* Zustandsanzeige (Lampe): nur in Eisen und Anzeigetafel sichtbar */
   .state { display: none; }
   .lamp { width: 12px; height: 12px; border-radius: 50%; background: var(--alert); box-shadow: 0 0 10px var(--alert); flex: none; }
   html[data-lock="open"] .lamp { background: var(--open); box-shadow: 0 0 10px var(--open); }
@@ -165,26 +166,19 @@
   table.hist th:not(:first-child), table.hist td:not(:first-child) { text-align: right; padding-left: 10px; }
   table.hist tr.zero td { color: var(--muted); }
 
-  /* ---- Plakat ---- */
-  html[data-theme="plakat"] h1 { font-size: 42px; text-transform: uppercase; letter-spacing: .02em; line-height: 1; margin: 16px 0 12px; }
-  html[data-theme="plakat"] .card { background: var(--surface); border: 3px solid #000; box-shadow: 5px 5px 0 #000; padding: 14px 16px; margin-top: 14px; }
-  html[data-theme="plakat"] .card .label { margin-top: 0; font-weight: 700; color: #000; }
-  html[data-theme="plakat"] .stage { box-shadow: 5px 5px 0 #000; }
-  html[data-theme="plakat"] .unlockbox { border: 3px solid #000; box-shadow: 5px 5px 0 #000; }
-  html[data-theme="plakat"] .state {
-    display: block; height: 18px; border: 3px solid #000; margin: 0 0 4px;
-    background: repeating-linear-gradient(135deg, #000 0 14px, var(--bg) 14px 28px);
-  }
-  html[data-theme="plakat"][data-lock="open"] .state { background: repeating-linear-gradient(135deg, var(--open) 0 14px, #fff 14px 28px); }
-  html[data-theme="plakat"] .state > * { display: none; }
-  html[data-theme="plakat"] button { font-family: var(--display); font-weight: 400; font-size: 21px; letter-spacing: .06em; text-transform: uppercase; padding: 14px 18px 12px; }
-  html[data-theme="plakat"] button.secondary { background: #fff; color: #000; box-shadow: 4px 4px 0 #000; }
-  html[data-theme="plakat"] button.secondary:active { background: #fff; transform: translate(3px, 3px); box-shadow: 1px 1px 0 #000; }
-  html[data-theme="plakat"] h2 { font-size: 32px; text-transform: uppercase; letter-spacing: .02em; line-height: 1; }
-  html[data-theme="plakat"] button.chip[aria-pressed="true"] { background: #000; color: #FFD21F; }
-  html[data-theme="plakat"] .chart .bar { stroke: #000; stroke-width: 2; }
-  html[data-theme="plakat"] .chart h3 { color: #000; font-weight: 700; }
-  html[data-theme="plakat"] button.chip { font-family: var(--body); font-weight: 700; font-size: 16px; letter-spacing: 0; text-transform: none; background: #fff; padding: 10px 6px; }
+  /* ---- Eisen ---- */
+  html[data-theme="eisen"] h1 { font-size: 34px; text-transform: uppercase; letter-spacing: .04em; line-height: 1; margin: 18px 0 12px; }
+  html[data-theme="eisen"] h2 { font-size: 26px; text-transform: uppercase; letter-spacing: .04em; line-height: 1; }
+  html[data-theme="eisen"] .card { background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--rc); padding: 16px; margin-top: 14px; }
+  html[data-theme="eisen"] .card .label { margin-top: 0; }
+  html[data-theme="eisen"] .count { letter-spacing: .01em; }
+  html[data-theme="eisen"] .state { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); margin: 0 0 4px; }
+  html[data-theme="eisen"] button { font-weight: 700; letter-spacing: .02em; }
+  html[data-theme="eisen"] button.secondary { border-color: #5A5651; }
+  html[data-theme="eisen"] button.chip { border-color: #5A5651; }
+  html[data-theme="eisen"] button.chip[aria-pressed="true"] { border-color: var(--accent); }
+  html[data-theme="eisen"] .stage { border-color: #5A5651; }
+  html[data-theme="eisen"] .chart .bar.s2 { fill: #C9C4BC; }
 
   /* ---- Anzeigetafel ---- */
   html[data-theme="tafel"] h2 { font-size: 16px; letter-spacing: .14em; }
@@ -259,7 +253,7 @@
       <label class="field">Design
         <select id="setTheme">
           <option value="halle">Halle (hell, ruhig)</option>
-          <option value="plakat">Plakat (gelb, laut)</option>
+          <option value="eisen">Eisen (graphit, rot)</option>
           <option value="tafel">Anzeigetafel (dunkel)</option>
         </select>
       </label>
@@ -350,9 +344,13 @@ const ROTATIONS = [0, 90, 270];
 const SMOOTH = 0.65;         // Gewicht des neuen Messwerts (1 = keine Glättung)
 const HOLD_FRAMES = 6;       // so viele ungültige Frames werden überbrückt, ohne den Zustand zu verlieren
 const RESET_FRAMES = 20;     // danach geht die Phase auf "unbekannt"
+const ACQUIRE_FRAMES = 8;    // so viele stabile, plausible Frames am Stück, bevor gezählt wird
+const MIN_SPAN = 0.22;       // Körperlänge (Schulter bis Knöchel) mindestens so groß wie dieser Anteil der Bildlänge
+const MAX_JUMP = 0.30;       // maximale Bewegung von Schulter/Hüfte pro Frame, in Rumpflängen
+const DRAW_SMOOTH = 0.55;    // Glättung des Overlays (1 = keine Glättung)
 
 const DEMO = new URLSearchParams(location.search).get("demo") === "1";   // Vorschau mit Beispieldaten
-const THEMES = { halle: "#EEF1EC", plakat: "#FFD21F", tafel: "#0F1B2A" };   // Farbe für die Statusleiste
+const THEMES = { halle: "#EEF1EC", eisen: "#161616", tafel: "#0F1B2A" };   // Farbe für die Statusleiste
 
 const $ = id => document.getElementById(id);
 const el = {
@@ -418,6 +416,7 @@ applyTheme();
 let landmarker = null, stream = null, running = false, rafId = 0, lastVideoTime = -1;
 let reps = 0, phase = "unknown", lastRepAt = 0, smooth = null, curMin = 999, curMax = 0, repMax = 0, topAvg = null, lowAvg = null, thrDown = ANGLE_DOWN, thrUp = ANGLE_UP, wakeLock = null, audioCtx = null;
 let rotIdx = 0, invalidStreak = 0, invalidRun = 0, side = "left";
+let locked = false, goodStreak = 0, prevMid = null, drawLm = null;
 let fpsCount = 0, fpsT = performance.now(), fps = 0, loopToken = 0;
 
 function setStatus(msg, warn = false) {
@@ -508,8 +507,19 @@ function validate(lm, W, H) {
   const upper = dist(sh, elb), fore = dist(elb, wr), torso = dist(sh, hip);
   if (torso < 5 || upper < 3 || fore < 3) return { ok: false, s, reason: "Pose unklar. Ganzen Körper von der Seite zeigen." };
 
-  const r1 = upper / fore, r2 = upper / torso;
-  if (r1 < 0.5 || r1 > 2 || r2 < 0.3 || r2 > 1.5) return { ok: false, s, reason: "Pose unklar. Ganzen Körper von der Seite zeigen." };
+  const r1 = upper / fore, r2 = upper / torso, r3 = (upper + fore) / torso;
+  if (r1 < 0.5 || r1 > 2 || r2 < 0.3 || r2 > 1.5 || r3 < 0.6 || r3 > 2.4) return { ok: false, s, reason: "Pose unklar. Ganzen Körper von der Seite zeigen." };
+
+  // Körpergröße im Bild: kleine Treffer im Hintergrund werden verworfen
+  const ankV = lm[s.ank].visibility > MIN_VIS;
+  const span = ankV ? dist(sh, P(s.ank)) : torso * 1.8;
+  if (span < MIN_SPAN * Math.max(W, H)) return { ok: false, s, reason: "Zu weit weg oder falsche Erkennung. Näher ans Handy oder ganzen Körper zeigen." };
+
+  // Sprung-Filter: Schulter und Hüfte bewegen sich zwischen zwei Frames nur wenig
+  const mid = { x: (sh.x + hip.x) / 2, y: (sh.y + hip.y) / 2 };
+  const jumped = prevMid && dist(mid, prevMid) > MAX_JUMP * torso;
+  prevMid = mid;
+  if (jumped) return { ok: false, s, jump: true, reason: "Erkennung springt. Kurz stillhalten." };
 
   // Kopf muss auf der Schulterseite liegen, Knöchel auf der Hüftseite
   if (lm[NOSE].visibility > MIN_VIS) {
@@ -531,19 +541,21 @@ function validate(lm, W, H) {
 
 function draw(lm, v, W, H) {
   ctx.drawImage(el.video, 0, 0, W, H);
-  if (!lm || !v.s) return;
-  const s = v.s;
+  // Overlay nur bei plausibler Pose zeigen und glätten, damit nichts springt
+  if (!lm || !v.ok) { if (invalidRun > HOLD_FRAMES) drawLm = null; if (!drawLm) return; }
+  else drawLm = drawLm ? lm.map((p, i) => ({ x: DRAW_SMOOTH * p.x + (1 - DRAW_SMOOTH) * drawLm[i].x, y: DRAW_SMOOTH * p.y + (1 - DRAW_SMOOTH) * drawLm[i].y })) : lm.map(p => ({ x: p.x, y: p.y }));
+  const s = v.s || SIDES[side], L = drawLm;
   const lw = Math.max(3, W / 130);
   ctx.lineWidth = lw; ctx.lineCap = "round"; ctx.lineJoin = "round";
-  ctx.strokeStyle = v.ok ? "#F2B134" : "#B3362B";
+  ctx.strokeStyle = locked ? "#F2B134" : "rgba(242,177,52,.55)";
   const chains = [[s.sh, s.el, s.wr], [s.sh, s.hip, s.knee, s.ank]];
   chains.forEach(ch => {
     ctx.beginPath();
-    ch.forEach((i, k) => { const x = lm[i].x * W, y = lm[i].y * H; k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ch.forEach((i, k) => { const x = L[i].x * W, y = L[i].y * H; k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
     ctx.stroke();
   });
   ctx.fillStyle = "#EEF1EC";
-  chains.flat().forEach(i => { ctx.beginPath(); ctx.arc(lm[i].x * W, lm[i].y * H, lw * 1.2, 0, Math.PI * 2); ctx.fill(); });
+  chains.flat().forEach(i => { ctx.beginPath(); ctx.arc(L[i].x * W, L[i].y * H, lw * 1.2, 0, Math.PI * 2); ctx.fill(); });
 }
 
 // Schwellen aus dem eigenen Bewegungsumfang ableiten (2D-Seitenansicht erreicht selten 180°)
@@ -606,16 +618,20 @@ function frame() {
 
   if (v.ok) {
     invalidStreak = 0; invalidRun = 0;
-    setStatus("Läuft. Weiter so.");
-    count(v.angle);
+    goodStreak++;
+    if (!locked && goodStreak >= ACQUIRE_FRAMES) { locked = true; smooth = null; phase = "unknown"; }
+    if (locked) { setStatus("Läuft. Weiter so."); count(v.angle); }
+    else setStatus("Pose wird erkannt ... (" + goodStreak + "/" + ACQUIRE_FRAMES + ")");
   } else {
     invalidStreak++; invalidRun++;
+    goodStreak = 0;
+    if (v.jump && !locked) prevMid = null;
     // Kurze Aussetzer überbrücken, damit schnelle Wiederholungen nicht verloren gehen
     if (invalidRun > HOLD_FRAMES) { smooth = null; el.angle.textContent = "-"; setStatus(v.reason, true); }
-    if (invalidRun > RESET_FRAMES) phase = "unknown";
+    if (invalidRun > RESET_FRAMES) { phase = "unknown"; locked = false; prevMid = null; }
     if (invalidStreak >= ROTATE_AFTER) {
       rotIdx = (rotIdx + 1) % ROTATIONS.length;
-      invalidStreak = 0; phase = "unknown";
+      invalidStreak = 0; phase = "unknown"; locked = false; prevMid = null; drawLm = null;
     }
   }
   renderPhase();
@@ -675,6 +691,7 @@ async function startTraining() {
     reps = 0; phase = "unknown"; smooth = null; curMin = 999; curMax = 0; lastRepAt = 0; lastVideoTime = -1;
     topAvg = null; lowAvg = null; thrDown = ANGLE_DOWN; thrUp = ANGLE_UP;
     rotIdx = 0; invalidStreak = 0; invalidRun = 0;
+    locked = false; goodStreak = 0; prevMid = null; drawLm = null;
     el.low.textContent = "-";
     renderCount();
     try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {}
