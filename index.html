@@ -25,6 +25,7 @@
     --display: "Barlow Condensed", "Arial Narrow", Impact, sans-serif;
     --body: "Barlow", -apple-system, "Helvetica Neue", Arial, sans-serif;
     --dw: 700; --count: 132px; --goal: 40px; --tile: 34px; --series2: #E0A21A; --r: 10px; --rc: 12px; --bw: 1.5px;
+    --sq-l: #E6ECE2; --sq-d: #86A793;
     color-scheme: light;
   }
   /* Eisen: Graphit mit Rot, ruhig und kraftvoll, ohne Banner und harte Schatten */
@@ -35,6 +36,7 @@
     --display: "Anton", Impact, "Arial Narrow", sans-serif;
     --body: "Archivo", -apple-system, "Helvetica Neue", Arial, sans-serif;
     --dw: 400; --count: 120px; --goal: 36px; --tile: 34px; --series2: #F2EFEA; --r: 12px; --rc: 14px; --bw: 1.5px;
+    --sq-l: #CBC5BB; --sq-d: #6D6862;
     color-scheme: dark;
   }
   /* Anzeigetafel: Dunkelblau, Bernstein-LED, Lampe für gesperrt und frei */
@@ -45,6 +47,7 @@
     --display: "Orbitron", "Arial Narrow", sans-serif;
     --body: "Saira", -apple-system, "Helvetica Neue", Arial, sans-serif;
     --dw: 700; --count: 88px; --goal: 24px; --tile: 20px; --series2: #5AA9FF; --r: 8px; --rc: 12px; --bw: 1.5px;
+    --sq-l: #8FA9C4; --sq-d: #2D4C70;
     color-scheme: dark;
   }
 
@@ -68,7 +71,8 @@
     font-family: var(--display); font-weight: var(--dw); font-size: var(--count); line-height: .9;
     font-variant-numeric: tabular-nums;
   }
-  .goal { font-family: var(--display); font-weight: var(--dw); font-size: var(--goal); color: var(--muted); }
+  .count.clock { font-size: calc(var(--count) * .6); }
+  .goal { white-space: nowrap; font-family: var(--display); font-weight: var(--dw); font-size: var(--goal); color: var(--muted); }
   .sub { font-size: 14px; color: var(--muted); margin: 6px 2px 0; }
   .sub:empty { display: none; }
 
@@ -160,10 +164,11 @@
   .chart .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
   .chart text { font-family: var(--body); fill: var(--muted); font-size: 10px; }
   .chart text.val { fill: var(--ink); font-weight: 600; }
-  table.hist { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  table.hist { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
   table.hist th { text-align: left; color: var(--muted); font-weight: 600; padding: 4px 0 8px; }
   table.hist td { padding: 8px 0; border-top: var(--bw) solid var(--line); }
-  table.hist th:not(:first-child), table.hist td:not(:first-child) { text-align: right; padding-left: 10px; }
+  table.hist th:not(:first-child), table.hist td:not(:first-child) { text-align: right; padding-left: 6px; }
+  table.hist th { font-size: 12px; }
   table.hist tr.zero td { color: var(--muted); }
 
   /* ---- Eisen ---- */
@@ -196,6 +201,53 @@
   html[data-theme="tafel"] button.secondary { border-color: #4A6585; }
   html[data-theme="tafel"] button.chip { border-color: #4A6585; }
   html[data-theme="tafel"] .stage { border-color: #4A6585; }
+
+  /* ---- Aufgaben ---- */
+  .tasks { display: grid; gap: 10px; margin-top: 4px; }
+  button.task {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left;
+    background: var(--surface); color: var(--ink); border: var(--bw) solid var(--line); padding: 16px; margin: 0;
+  }
+  button.task:active { background: var(--surface); border-color: var(--accent); }
+  button.task b { font-family: var(--display); font-weight: var(--dw); font-size: 24px; letter-spacing: .01em; }
+  button.task span { font-size: 14px; font-weight: 400; color: var(--muted); line-height: 1.4; }
+  html[data-theme="eisen"] button.task b { text-transform: uppercase; letter-spacing: .04em; }
+  html[data-theme="tafel"] button.task b { font-size: 17px; letter-spacing: .1em; }
+  .tiles + .tiles { margin-top: 14px; }
+
+  /* Schachbrett */
+  .board { width: min(100%, 62vh); aspect-ratio: 1; margin: 12px auto 0; }
+  .board svg { display: block; width: 100%; height: 100%; border-radius: 8px; touch-action: manipulation; }
+  .board .sq.l { fill: var(--sq-l); }
+  .board .sq.d { fill: var(--sq-d); }
+  .board .hl, .board .dot, .board .ring, .board .pc { pointer-events: none; }
+  .board .hl.last { fill: #F2B134; opacity: .45; }
+  .board .hl.sel { fill: var(--focus); opacity: .55; }
+  .board .hl.hint { fill: var(--open); opacity: .7; }
+  .board .dot { fill: rgba(20,20,20,.38); }
+  .board .ring { fill: none; stroke: rgba(20,20,20,.42); stroke-width: .09; }
+  .board .pc { font-family: "Apple Symbols", "Segoe UI Symbol", "DejaVu Sans", "Noto Sans Symbols 2", sans-serif; stroke-width: .035; paint-order: stroke; }
+  .board .pc.w { fill: #FFFFFF; stroke: #1A1A1A; }
+  .board .pc.b { fill: #1A1A1A; stroke: #F4F4F4; }
+
+  /* Gedächtnis */
+  .memgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: min(100%, 56vh); margin: 12px auto 0; }
+  button.cell {
+    aspect-ratio: 1; padding: 0; background: var(--surface); color: var(--ink);
+    border: var(--bw) solid var(--line); border-radius: var(--rc); transition: background .08s;
+  }
+  button.cell:active { background: var(--surface); border-color: var(--line); }
+  button.cell.lit { background: var(--accent); border-color: var(--accent); }
+  button.cell.bad { background: var(--alert); border-color: var(--alert); }
+  .memgrid.off button.cell { pointer-events: none; }
+  .digit { font-family: var(--display); font-weight: var(--dw); font-size: 120px; line-height: 1.1; text-align: center; min-height: 150px; font-variant-numeric: tabular-nums; }
+  .digitbox { margin-top: 12px; }
+  .digitbox input { text-align: center; font-size: 24px; letter-spacing: .2em; }
+  .digitbox button { margin-top: 10px; }
+
+  .hcard > .label { margin: 0 0 10px; }
+  html[data-theme] button.secondary.danger { color: var(--alert); border-color: var(--alert); }
+  #histStatus:empty, #wipeStatus:empty { display: none; }
 
   /* Querformat am Handy: kompakter, Bühne begrenzt */
   @media (orientation: landscape) and (max-height: 520px) {
@@ -244,7 +296,7 @@
 
     <p class="status" id="homeStatus"></p>
     <button id="retryBtn" class="hidden">Erneut senden</button>
-    <button id="trainBtn" class="secondary">Training</button>
+    <button id="trainBtn" class="secondary">Minuten verdienen</button>
     <button id="histBtn" class="secondary">Historie</button>
     <button id="lockBtn" class="secondary">Jetzt wieder sperren</button>
 
@@ -259,6 +311,21 @@
       </label>
       <label class="field">Minuten pro Liegestütz
         <input id="setPerRep" type="number" inputmode="decimal" min="0.5" max="60" step="0.5" value="1">
+      </label>
+      <label class="field">Plank: Sekunden pro Minute
+        <input id="setPlankSec" type="number" inputmode="decimal" min="1" max="120" step="1" value="4">
+      </label>
+      <label class="field">Schach: Minuten pro gelöstem Puzzle
+        <input id="setChessMin" type="number" inputmode="decimal" min="0.5" max="60" step="0.5" value="5">
+      </label>
+      <label class="field">Schach: Schwierigkeit
+        <select id="setChessDiff">
+          <option value="easiest">Sehr leicht</option>
+          <option value="easier">Leicht (Standard)</option>
+          <option value="normal">Normal</option>
+          <option value="harder">Schwer</option>
+          <option value="hardest">Sehr schwer</option>
+        </select>
       </label>
       <label class="field">Worker-URL
         <input id="setWorker" type="url" placeholder="https://liegestuetze.DEINNAME.workers.dev" autocapitalize="off" autocorrect="off">
@@ -278,7 +345,9 @@
           <option value="lite">Schnell (mehr Bilder pro Sekunde)</option>
         </select>
       </label>
-      <p class="hint">Training schreibt Minuten gut. Das gesamte Guthaben wird täglich um 4 Uhr gelöscht. Wer morgens aufsteht, startet bei 0. Der Token bleibt nur in diesem Browser gespeichert.</p>
+      <p class="hint">Training und Aufgaben schreiben Minuten gut. Das gesamte Guthaben wird täglich um 4 Uhr gelöscht. Wer morgens aufsteht, startet bei 0. Der Token bleibt nur in diesem Browser gespeichert.</p>
+      <button id="wipeBtn" class="secondary danger">Historie und Guthaben löschen</button>
+      <p class="status" id="wipeStatus" aria-live="polite"></p>
     </details>
   </section>
 
@@ -299,9 +368,74 @@
     <div id="histBody"></div>
   </section>
 
+  <!-- Aufgaben: Auswahl -->
+  <section id="taskView" class="hidden">
+    <div class="topbar">
+      <button id="taskBack" class="back secondary">Zurück</button>
+      <h2>Minuten verdienen</h2>
+    </div>
+    <div class="tasks">
+      <button class="task" data-task="pushup"><b>Liegestütze</b><span id="rateRep"></span></button>
+      <button class="task" data-task="plank"><b>Plank</b><span id="ratePlank"></span></button>
+      <button class="task" data-task="chess"><b>Schach-Taktik</b><span id="rateChess"></span></button>
+      <button class="task" data-task="memory"><b>Gedächtnis</b><span>Muster oder Zahlen merken. Je länger die Reihe, desto mehr Minuten.</span></button>
+    </div>
+  </section>
+
+  <!-- Schach-Taktik -->
+  <section id="chessView" class="hidden">
+    <div class="card">
+      <p class="label">Schach-Taktik, gelöst</p>
+      <div class="counter">
+        <div class="count" id="chessCount" aria-live="polite">0</div>
+        <div class="goal">= <span id="chessMin">0</span> Min</div>
+      </div>
+    </div>
+    <p class="sub" id="chessInfo"></p>
+    <div class="board" id="board" role="img" aria-label="Schachbrett"></div>
+    <div class="status" id="chessStatus" aria-live="polite">Lade Puzzle ...</div>
+    <button id="chessNext" class="hidden">Nächstes Puzzle</button>
+    <button id="chessSkip" class="secondary hidden">Überspringen</button>
+    <button id="chessFinish" class="hidden">Fertig, gutschreiben</button>
+    <button id="chessBack" class="secondary">Zurück</button>
+  </section>
+
+  <!-- Gedächtnis -->
+  <section id="memView" class="hidden">
+    <div class="card">
+      <p class="label">Gedächtnis, geschaffte Runden</p>
+      <div class="counter">
+        <div class="count" id="memCount" aria-live="polite">0</div>
+        <div class="goal">= <span id="memMin">0</span> Min</div>
+      </div>
+    </div>
+    <div class="chips seg" id="memSeg" role="group" aria-label="Spielart">
+      <button class="chip" data-kind="grid" aria-pressed="true">Muster</button>
+      <button class="chip" data-kind="digits" aria-pressed="false">Zahlen</button>
+    </div>
+    <p class="sub" id="memInfo"></p>
+    <div id="memArea">
+      <div class="memgrid off" id="memGrid">
+        <button class="cell" data-i="0" aria-label="Feld 1"></button><button class="cell" data-i="1" aria-label="Feld 2"></button><button class="cell" data-i="2" aria-label="Feld 3"></button>
+        <button class="cell" data-i="3" aria-label="Feld 4"></button><button class="cell" data-i="4" aria-label="Feld 5"></button><button class="cell" data-i="5" aria-label="Feld 6"></button>
+        <button class="cell" data-i="6" aria-label="Feld 7"></button><button class="cell" data-i="7" aria-label="Feld 8"></button><button class="cell" data-i="8" aria-label="Feld 9"></button>
+      </div>
+      <div class="digitbox hidden" id="digitBox">
+        <div class="digit" id="memDigit" aria-live="polite"></div>
+        <input id="memInput" class="hidden" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="Zahlen eingeben">
+        <button id="memCheck" class="hidden">Prüfen</button>
+      </div>
+    </div>
+    <div class="status" id="memStatus" aria-live="polite">Tippe auf Start.</div>
+    <button id="memStart">Start</button>
+    <button id="memFinish" class="hidden">Fertig, gutschreiben</button>
+    <button id="memBack" class="secondary">Zurück</button>
+  </section>
+
   <!-- Training -->
   <section id="trainView" class="hidden">
     <div class="card">
+      <p class="label" id="trainTitle">Liegestütze</p>
       <div class="counter">
         <div class="count" id="count" aria-live="polite">0</div>
         <div class="goal">= <span id="minLabel">0</span> Min</div>
@@ -315,7 +449,7 @@
     </div>
 
     <div class="status" id="status">Bereit.</div>
-    <div class="meta"><span>Winkel: <b id="angleLabel">-</b> · Tiefster: <b id="lowLabel">-</b></span><span id="phaseLabel">-</span></div>
+    <div class="meta"><span><span id="metaA">Winkel</span>: <b id="angleLabel">-</b> · <span id="metaB">Tiefster</span>: <b id="lowLabel">-</b></span><span id="phaseLabel">-</span></div>
 
     <button id="startBtn">Training starten</button>
     <button id="finishBtn" class="hidden">Fertig, gutschreiben</button>
@@ -348,6 +482,12 @@ const ACQUIRE_FRAMES = 8;    // so viele stabile, plausible Frames am Stück, be
 const MIN_SPAN = 0.22;       // Körperlänge (Schulter bis Knöchel) mindestens so groß wie dieser Anteil der Bildlänge
 const MAX_JUMP = 0.30;       // maximale Bewegung von Schulter/Hüfte pro Frame, in Rumpflängen
 const DRAW_SMOOTH = 0.55;    // Glättung des Overlays (1 = keine Glättung)
+// Plank
+const PLANK_LINE_MIN = 155;  // Winkel Schulter-Hüfte-Fuß: darunter hängt die Hüfte durch oder ragt hoch
+const PLANK_MAX_TILT = 30;   // Grad Abweichung der Linie Schulter-Fuß von der Waagerechten
+const PLANK_ARM_MIN = 55;    // Winkel Rumpf-Oberarm: der Arm stützt ungefähr senkrecht unter der Schulter
+const PLANK_ARM_MAX = 125;
+const TICK_CAP = 250;        // höchstens so viele ms pro Bild zählen zur Plank-Zeit
 
 const DEMO = new URLSearchParams(location.search).get("demo") === "1";   // Vorschau mit Beispieldaten
 const THEMES = { halle: "#EEF1EC", eisen: "#161616", tafel: "#0F1B2A" };   // Farbe für die Statusleiste
@@ -364,8 +504,18 @@ const el = {
   redeemInput: $("redeemInput"), redeemBtn: $("redeemBtn"), homeStatus: $("homeStatus"),
   retryBtn: $("retryBtn"), trainBtn: $("trainBtn"), lockBtn: $("lockBtn"),
   histBtn: $("histBtn"), histBack: $("histBack"), historyView: $("historyView"), rangeSeg: $("rangeSeg"),
-  histRange: $("histRange"), histStatus: $("histStatus"), histBody: $("histBody")
+  histRange: $("histRange"), histStatus: $("histStatus"), histBody: $("histBody"),
+  wipeBtn: $("wipeBtn"), wipeStatus: $("wipeStatus"),
+  setPlankSec: $("setPlankSec"), setChessMin: $("setChessMin"), setChessDiff: $("setChessDiff"),
+  trainTitle: $("trainTitle"), metaA: $("metaA"), metaB: $("metaB"),
+  taskView: $("taskView"), taskBack: $("taskBack"),
+  chessView: $("chessView"), chessCount: $("chessCount"), chessMin: $("chessMin"), chessInfo: $("chessInfo"), board: $("board"),
+  chessStatus: $("chessStatus"), chessNext: $("chessNext"), chessSkip: $("chessSkip"), chessFinish: $("chessFinish"), chessBack: $("chessBack"),
+  memView: $("memView"), memCount: $("memCount"), memMin: $("memMin"), memSeg: $("memSeg"), memInfo: $("memInfo"), memGrid: $("memGrid"),
+  digitBox: $("digitBox"), memDigit: $("memDigit"), memInput: $("memInput"), memCheck: $("memCheck"), memStatus: $("memStatus"),
+  memStart: $("memStart"), memFinish: $("memFinish"), memBack: $("memBack")
 };
+const PH_PUSHUP = el.placeholder.textContent;
 const ctx = el.canvas.getContext("2d");
 const rotCanvas = document.createElement("canvas");
 const rctx = rotCanvas.getContext("2d");
@@ -382,8 +532,12 @@ const settings = {
   worker: store.get("worker", ""),
   token: store.get("token", ""),
   camera: store.get("camera", "user"),
-  model: store.get("model", "full")
+  model: store.get("model", "full"),
+  plankSec: +store.get("plankSec", 4) || 4,
+  chessMin: +store.get("chessMin", 5) || 5,
+  chessDiff: ["easiest", "easier", "normal", "harder", "hardest"].includes(store.get("chessDiff", "easier")) ? store.get("chessDiff", "easier") : "easier"
 };
+const DEFAULTS = { perRep: 1, plankSec: 4, chessMin: 5 };
 function applySettingsToUI() {
   el.setTheme.value = settings.theme;
   el.setPerRep.value = settings.perRep;
@@ -391,17 +545,21 @@ function applySettingsToUI() {
   el.setToken.value = settings.token;
   el.setCamera.value = settings.camera;
   el.setModel.value = settings.model;
+  el.setPlankSec.value = settings.plankSec;
+  el.setChessMin.value = settings.chessMin;
+  el.setChessDiff.value = settings.chessDiff;
 }
-[["setTheme","theme",false],["setPerRep","perRep",true],["setWorker","worker",false],["setToken","token",false],["setCamera","camera",false],["setModel","model",false]].forEach(([id,key,num]) => {
+[["setTheme","theme",0],["setPerRep","perRep",0.5],["setPlankSec","plankSec",1],["setChessMin","chessMin",0.5],["setWorker","worker",0],["setToken","token",0],["setCamera","camera",0],["setModel","model",0],["setChessDiff","chessDiff",0]].forEach(([id,key,min]) => {
   el[id].addEventListener("change", () => {
     let v = el[id].value;
-    if (num) { v = Math.max(0.5, parseFloat(String(v).replace(",", ".")) || 1); el[id].value = v; }
-    if (!num) { v = String(v).trim(); el[id].value = v; }
+    if (min) { v = Math.max(min, parseFloat(String(v).replace(",", ".")) || DEFAULTS[key]); el[id].value = v; }
+    else { v = String(v).trim(); el[id].value = v; }
     settings[key] = v;
     store.set(key, v);
     if (key === "theme") applyTheme();
     if (key === "model") { try { landmarker && landmarker.close(); } catch {} landmarker = null; }
     renderCount();
+    renderRates();
   });
 });
 function applyTheme() {
@@ -418,17 +576,27 @@ let reps = 0, phase = "unknown", lastRepAt = 0, smooth = null, curMin = 999, cur
 let rotIdx = 0, invalidStreak = 0, invalidRun = 0, side = "left";
 let locked = false, goodStreak = 0, prevMid = null, drawLm = null;
 let fpsCount = 0, fpsT = performance.now(), fps = 0, loopToken = 0;
+let mode = "pushup", holdMs = 0, runMs = 0, bestRun = 0, lastTickT = 0, lastSec = -1, lastOk = false;
 
 function setStatus(msg, warn = false) {
   el.status.textContent = msg;
   el.status.classList.toggle("warn", warn);
 }
-function earnedMinutes() { return Math.round(reps * settings.perRep * 10) / 10; }
+function earnedMinutes() {
+  return mode === "plank"
+    ? Math.round(holdMs / 1000 / settings.plankSec * 10) / 10
+    : Math.round(reps * settings.perRep * 10) / 10;
+}
+const fmtClock = sec => { const x = Math.floor(sec); return Math.floor(x / 60) + ":" + String(x % 60).padStart(2, "0"); };
 function renderCount() {
-  el.count.textContent = reps;
+  el.count.textContent = mode === "plank" ? fmtClock(holdMs / 1000) : reps;
   el.minLabel.textContent = earnedMinutes();
 }
 function renderPhase() {
+  if (mode === "plank") {
+    el.phase.textContent = (locked ? (lastOk ? "Position gehalten" : "Position verloren") : "-") + " · Bild " + ROTATIONS[rotIdx] + "° · " + fps + " fps";
+    return;
+  }
   const p = phase === "up" ? "oben" : phase === "down" ? "unten" : "-";
   el.phase.textContent = p + " · Schwellen " + Math.round(thrDown) + "/" + Math.round(thrUp) + "° · Bild " + ROTATIONS[rotIdx] + "° · " + fps + " fps";
 }
@@ -539,6 +707,58 @@ function validate(lm, W, H) {
   return { ok: true, s, angle };
 }
 
+// Prüft die Plank-Haltung von der Seite: Körper waagerecht, Arm senkrecht unter der Schulter, Hüfte in einer Linie mit Schulter und Fuß.
+function validatePlank(lm, W, H) {
+  const s = pickSide(lm);
+  const P = i => ({ x: lm[i].x * W, y: lm[i].y * H });
+  const unclear = { ok: false, s, reason: "Pose unklar. Ganzen Körper von der Seite zeigen." };
+  const vis = Math.min(lm[s.sh].visibility, lm[s.el].visibility, lm[s.hip].visibility, lm[s.ank].visibility);
+  if (vis < MIN_VIS) return { ok: false, s, reason: "Schulter, Ellbogen, Hüfte oder Fuß nicht klar sichtbar. Ganzen Körper von der Seite zeigen." };
+
+  const sh = P(s.sh), elb = P(s.el), hip = P(s.hip), ank = P(s.ank);
+  const torso = dist(sh, hip), span = dist(sh, ank);
+  if (torso < 5 || span < MIN_SPAN * Math.max(W, H)) return { ok: false, s, reason: "Zu weit weg oder falsche Erkennung. Näher ans Handy, ganzen Körper zeigen." };
+  const ratio = torso / span;
+  if (ratio < 0.2 || ratio > 0.7) return unclear;
+
+  const mid = { x: (sh.x + hip.x) / 2, y: (sh.y + hip.y) / 2 };
+  const jumped = prevMid && dist(mid, prevMid) > MAX_JUMP * torso;
+  prevMid = mid;
+  if (jumped) return { ok: false, s, jump: true, reason: "Erkennung springt. Kurz stillhalten." };
+
+  if (lm[NOSE].visibility > MIN_VIS && dist(P(NOSE), sh) > dist(P(NOSE), hip)) return unclear;
+  if (dist(sh, ank) < dist(sh, hip)) return unclear;
+
+  const tilt = Math.atan2(Math.abs(ank.y - sh.y), Math.abs(ank.x - sh.x)) * 180 / Math.PI;
+  if (tilt > PLANK_MAX_TILT) return { ok: false, s, reason: "Geh in die Plank-Position, Körper waagerecht." };
+
+  const arm = angleAt(hip, sh, elb);
+  if (arm === null || arm < PLANK_ARM_MIN || arm > PLANK_ARM_MAX) return { ok: false, s, form: true, reason: "Stütz dich senkrecht unter der Schulter ab (Unterarm oder gestreckter Arm)." };
+
+  const line = angleAt(sh, hip, ank);
+  if (line === null) return unclear;
+  if (line < PLANK_LINE_MIN) {
+    const dx = ank.x - sh.x;
+    const lineY = Math.abs(dx) < 1e-6 ? sh.y : sh.y + (ank.y - sh.y) * (hip.x - sh.x) / dx;
+    return { ok: false, s, form: true, reason: hip.y < lineY ? "Hüfte zu hoch. Körper gerade halten." : "Hüfte hängt durch. Körper gerade halten." };
+  }
+  return { ok: true, s, angle: line };
+}
+
+// Zählt die gehaltene Zeit. counting = false: Haltung verloren, die aktuelle Serie endet.
+function holdTick(dt, counting) {
+  if (!counting) { runMs = 0; return; }
+  holdMs += dt; runMs += dt;
+  if (runMs > bestRun) bestRun = runMs;
+  const sec = Math.floor(holdMs / 1000);
+  if (sec !== lastSec) {
+    lastSec = sec;
+    renderCount();
+    el.low.textContent = fmtClock(bestRun / 1000);
+    if (sec > 0 && sec % 10 === 0) beep(sec % 60 === 0 ? 880 : 620);
+  }
+}
+
 function draw(lm, v, W, H) {
   ctx.drawImage(el.video, 0, 0, W, H);
   // Overlay nur bei plausibler Pose zeigen und glätten, damit nichts springt
@@ -612,19 +832,27 @@ function frame() {
     smooth = null; phase = "unknown";
   }
 
+  const plank = mode === "plank";
   const lm = detect(t);
-  const v = lm ? validate(lm, W, H) : { ok: false, reason: "Keine Person erkannt. Ganzen Körper ins Bild bringen." };
+  const v = lm ? (plank ? validatePlank(lm, W, H) : validate(lm, W, H)) : { ok: false, reason: "Keine Person erkannt. Ganzen Körper ins Bild bringen." };
   draw(lm, v, W, H);
+  const dt = lastTickT ? Math.min(t - lastTickT, TICK_CAP) : 0;
+  lastTickT = t;
 
   if (v.ok) {
     invalidStreak = 0; invalidRun = 0;
     goodStreak++;
     if (!locked && goodStreak >= ACQUIRE_FRAMES) { locked = true; smooth = null; phase = "unknown"; }
-    if (locked) { setStatus("Läuft. Weiter so."); count(v.angle); }
+    if (locked) {
+      if (plank) { lastOk = true; el.angle.textContent = Math.round(v.angle) + "°"; setStatus("Läuft. Position halten."); holdTick(dt, true); }
+      else { setStatus("Läuft. Weiter so."); count(v.angle); }
+    }
     else setStatus("Pose wird erkannt ... (" + goodStreak + "/" + ACQUIRE_FRAMES + ")");
   } else {
     invalidStreak++; invalidRun++;
     goodStreak = 0;
+    if (v.form) invalidStreak = Math.min(invalidStreak, ROTATE_AFTER - 1);   // Haltungsfehler: Pose ist erkannt, nicht das Bild drehen
+    if (plank && locked) { holdTick(dt, invalidRun <= HOLD_FRAMES); if (invalidRun > HOLD_FRAMES) lastOk = false; }   // kurze Aussetzer überbrücken
     if (v.jump && !locked) prevMid = null;
     // Kurze Aussetzer überbrücken, damit schnelle Wiederholungen nicht verloren gehen
     if (invalidRun > HOLD_FRAMES) { smooth = null; el.angle.textContent = "-"; setStatus(v.reason, true); }
@@ -692,6 +920,7 @@ async function startTraining() {
     topAvg = null; lowAvg = null; thrDown = ANGLE_DOWN; thrUp = ANGLE_UP;
     rotIdx = 0; invalidStreak = 0; invalidRun = 0;
     locked = false; goodStreak = 0; prevMid = null; drawLm = null;
+    holdMs = 0; runMs = 0; bestRun = 0; lastTickT = 0; lastSec = -1; lastOk = false;
     el.low.textContent = "-";
     renderCount();
     try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {}
@@ -701,7 +930,7 @@ async function startTraining() {
     el.back.classList.add("hidden");
     el.finishBtn.classList.remove("hidden");
     el.stop.classList.remove("hidden");
-    setStatus("Geh in die Liegestütz-Position.");
+    setStatus(mode === "plank" ? "Geh in die Plank-Position." : "Geh in die Liegestütz-Position.");
     loop();
   } catch (e) {
     console.error(e);
@@ -735,7 +964,7 @@ function abort() {
   ctx.clearRect(0, 0, el.canvas.width, el.canvas.height);
   el.angle.textContent = "-"; el.phase.textContent = "-"; el.low.textContent = "-";
   setStatus("Abgebrochen. Der Zähler wurde zurückgesetzt.");
-  reps = 0; renderCount();
+  reps = 0; holdMs = 0; runMs = 0; bestRun = 0; lastSec = -1; renderCount();
 }
 
 // ---------- Konto: Guthaben und Freischaltung ----------
@@ -782,6 +1011,7 @@ async function api(path, method = "GET", body) {
       data.error === "insufficient" ? "Guthaben reicht nicht (nur " + fmtMin(data.total) + " Min)." :
       data.error === "bank_full" ? "Guthaben-Obergrenze erreicht (maximal " + data.max + " Min)." :
       data.error === "upstream" ? "NextDNS hat nicht geantwortet. Erneut senden ist sicher." :
+      data.error === "not_found" ? "Der Worker kennt diese Funktion noch nicht. Neue worker.js in Cloudflare einspielen." :
       "Serverfehler (" + r.status + ").";
     throw Object.assign(new Error(msg), { retryable: r.status !== 400 });
   }
@@ -822,20 +1052,44 @@ function renderHome() {
   el.retryBtn.classList.toggle("hidden", !(pending && pendingFailed));
 }
 
+const VIEW_IDS = ["homeView", "taskView", "trainView", "chessView", "memView", "historyView"];
+function showOnly(id) {
+  VIEW_IDS.forEach(v => el[v] ? el[v].classList.toggle("hidden", v !== id) : $(v).classList.toggle("hidden", v !== id));
+  if (id !== "homeView") { clearInterval(homeTimer); window.scrollTo(0, 0); }
+}
 function showHome() {
-  el.historyView.classList.add("hidden");
-  el.trainView.classList.add("hidden");
-  el.homeView.classList.remove("hidden");
+  memStop();
+  chessStop();
+  showOnly("homeView");
   renderHome();
   clearInterval(homeTimer); homeTimer = setInterval(renderHome, 1000);
 }
-function showTrain() {
-  clearInterval(homeTimer);
-  el.historyView.classList.add("hidden");
-  el.homeView.classList.add("hidden");
-  el.trainView.classList.remove("hidden");
+function renderRates() {
+  $("rateRep").textContent = fmtMin(settings.perRep) + " Min pro Wiederholung. Kamera von der Seite.";
+  $("ratePlank").textContent = "1 Min pro " + fmtMin(settings.plankSec) + " Sek. halten. Kamera von der Seite.";
+  $("rateChess").textContent = fmtMin(settings.chessMin) + " Min pro gelöstem Puzzle (Lichess).";
+}
+function showTasks() {
+  memStop();
+  chessStop();
+  renderRates();
+  showOnly("taskView");
+}
+function showTrain(m) {
+  mode = m === "plank" ? "plank" : "pushup";
+  const plank = mode === "plank";
+  showOnly("trainView");
+  el.count.classList.toggle("clock", plank);
+  el.trainTitle.textContent = plank ? "Plank, gehaltene Zeit" : "Liegestütze";
+  el.metaA.textContent = plank ? "Körperlinie" : "Winkel";
+  el.metaB.textContent = plank ? "Längste Serie" : "Tiefster";
+  el.placeholder.textContent = plank
+    ? "Stell das Handy (hochkant oder quer) auf den Boden, sodass die Kamera deine Körperseite filmt. Etwa 2 m Abstand, ganzer Körper im Bild, gutes Licht. Geh dann in den Unterarmstütz oder in die Liegestütz-Position und halte sie."
+    : PH_PUSHUP;
   el.placeholder.classList.remove("hidden");
-  reps = 0; renderCount(); setStatus("Bereit.");
+  reps = 0; holdMs = 0; runMs = 0; bestRun = 0; lastSec = -1;
+  el.angle.textContent = "-"; el.low.textContent = "-"; el.phase.textContent = "-";
+  renderCount(); setStatus("Bereit.");
 }
 
 // Sendet die offene Gutschrift oder Einlösung. Die Anfrage-ID verhindert doppelte Verbuchung bei Wiederholung.
@@ -846,7 +1100,7 @@ async function sendPending() {
   renderHome();
   setHome("Sende ...");
   try {
-    const d = await api(p.type === "earn" ? "/earn" : "/redeem", "POST", { minutes: p.minutes, reps: p.reps, requestId: p.requestId });
+    const d = await api(p.type === "earn" ? "/earn" : "/redeem", "POST", { minutes: p.minutes, reps: p.reps, kind: p.kind, requestId: p.requestId });
     store.del("pending");
     histData = null;
     applyState(d);
@@ -862,14 +1116,325 @@ async function sendPending() {
   }
 }
 
-function finish() {
-  if (DEMO) { stopCamera(); showHome(); setHome("Demo-Ansicht: es wird nichts gutgeschrieben."); return; }
-  if (reps < 1) { setStatus("Noch kein Liegestütz gezählt.", true); return; }
-  stopCamera();
-  doneJingle();
-  store.set("pending", JSON.stringify({ type: "earn", minutes: earnedMinutes(), reps, requestId: newId() }));
+// Legt eine Gutschrift ab und sendet sie. Die Art (kind) landet in der Historie.
+function queueEarn(kind, minutes, count) {
+  store.set("pending", JSON.stringify({ type: "earn", kind, minutes, reps: count, requestId: newId() }));
   showHome();
   sendPending();
+}
+
+function finish() {
+  if (DEMO) { stopCamera(); showHome(); setHome("Demo-Ansicht: es wird nichts gutgeschrieben."); return; }
+  const plank = mode === "plank";
+  const minutes = earnedMinutes();
+  if (plank ? (holdMs < 1000 || minutes <= 0) : reps < 1) { setStatus(plank ? "Noch keine Zeit gehalten." : "Noch kein Liegestütz gezählt.", true); return; }
+  if (getPending()) { setStatus("Eine frühere Anfrage ist noch offen. Erst auf der Startseite erneut senden.", true); return; }
+  stopCamera();
+  doneJingle();
+  queueEarn(mode, minutes, plank ? Math.round(holdMs / 1000) : reps);
+}
+
+// ---------- Schach-Taktik (Puzzles von Lichess) ----------
+const CHESS_URL = "https://cdn.jsdelivr.net/npm/chess.js@1.0.0/dist/esm/chess.js";
+const LICHESS_URL = "https://lichess.org/api/puzzle/next";
+const GLYPH = { k: "\u265A", q: "\u265B", r: "\u265C", b: "\u265D", n: "\u265E", p: "\u265F" };
+let Chess = null;
+const cs = { solved: 0, puz: null, game: null, sel: null, legal: [], state: "idle", last: null, hint: null, seen: new Set(), nextP: null, token: 0 };
+
+async function loadChess() { if (!Chess) Chess = (await import(CHESS_URL)).Chess; }
+function setChessStatus(msg, warn = false) { el.chessStatus.textContent = msg; el.chessStatus.classList.toggle("warn", warn); }
+function renderChessCount() {
+  el.chessCount.textContent = cs.solved;
+  el.chessMin.textContent = fmtMin(cs.solved * settings.chessMin);
+}
+function chessButtons() {
+  const st = cs.state;
+  el.chessNext.classList.toggle("hidden", !(st === "solved" || st === "failed" || st === "error"));
+  el.chessNext.textContent = st === "error" ? "Erneut versuchen" : "Nächstes Puzzle";
+  el.chessSkip.classList.toggle("hidden", !(st === "play" || st === "reply"));
+  el.chessFinish.classList.toggle("hidden", cs.solved < 1);
+}
+function chessStop() { cs.token++; cs.nextP = null; }
+
+function cachePuzzle(p) {
+  try {
+    const c = JSON.parse(store.get("chessCache", "[]")).filter(x => x.puzzle.id !== p.puzzle.id);
+    c.push({ game: { pgn: p.game.pgn }, puzzle: { id: p.puzzle.id, rating: p.puzzle.rating, solution: p.puzzle.solution, initialPly: p.puzzle.initialPly } });
+    store.set("chessCache", JSON.stringify(c.slice(-15)));
+  } catch {}
+}
+function cachedPuzzle() {
+  try { return JSON.parse(store.get("chessCache", "[]")).find(x => !cs.seen.has(x.puzzle.id)) || null; } catch { return null; }
+}
+async function fetchPuzzle() {
+  const r = await fetch(LICHESS_URL + "?difficulty=" + settings.chessDiff, { cache: "no-store", headers: { "Accept": "application/json" } });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const p = await r.json();
+  if (!p || !p.game || !p.game.pgn || !p.puzzle || !Array.isArray(p.puzzle.solution) || !p.puzzle.solution.length) throw new Error("Antwort unlesbar");
+  cachePuzzle(p);
+  return p;
+}
+// Nächstes Puzzle: vorab geladenes, sonst frisch, sonst aus dem Zwischenspeicher
+async function nextPuzzleData() {
+  for (let i = 0; i < 3; i++) {
+    let p = null;
+    if (cs.nextP) { p = await cs.nextP; cs.nextP = null; }
+    if (!p) { try { p = await fetchPuzzle(); } catch { p = null; } }
+    if (!p) break;
+    if (!cs.seen.has(p.puzzle.id)) return p;
+  }
+  return cachedPuzzle();
+}
+const uciMove = u => ({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u.length > 4 ? u[4] : undefined });
+const isLegalUci = (g, u) => g.moves({ verbose: true }).some(m => m.from === u.slice(0, 2) && m.to === u.slice(2, 4) && (m.promotion || "") === (u[4] || ""));
+
+// Stellung aufbauen: Die Lösung beginnt mit dem Zug des Lösenden. Je nach Zählweise der Halbzüge die passende Stellung wählen.
+function setupPuzzle(data) {
+  const sol = data.puzzle.solution;
+  let hist;
+  try { const base = new Chess(); base.loadPgn(data.game.pgn); hist = base.history(); } catch { return null; }
+  const ply = Number(data.puzzle.initialPly);
+  for (const n of [hist.length, ply + 1, ply]) {
+    if (!Number.isInteger(n) || n < 0 || n > hist.length) continue;
+    try {
+      const g = new Chess();
+      for (let i = 0; i < n; i++) g.move(hist[i]);
+      if (isLegalUci(g, sol[0])) return { game: g, color: g.turn(), sol, i: 0, rating: data.puzzle.rating, id: data.puzzle.id };
+    } catch {}
+  }
+  return null;
+}
+
+async function startPuzzle(tries = 0) {
+  const token = ++cs.token;
+  cs.state = "loading"; cs.sel = null; cs.legal = []; cs.hint = null; cs.last = null;
+  chessButtons();
+  setChessStatus("Lade Puzzle ...");
+  let data = null;
+  try { await loadChess(); } catch { if (token === cs.token) { cs.state = "error"; setChessStatus("Die Schach-Bibliothek konnte nicht geladen werden. Internet prüfen.", true); chessButtons(); } return; }
+  data = await nextPuzzleData();
+  if (token !== cs.token) return;
+  if (!data) { cs.state = "error"; setChessStatus("Lichess nicht erreichbar. Internet prüfen.", true); chessButtons(); return; }
+  cs.seen.add(data.puzzle.id);
+  const pz = setupPuzzle(data);
+  if (!pz) { if (tries < 3) return startPuzzle(tries + 1); cs.state = "error"; setChessStatus("Puzzle nicht lesbar.", true); chessButtons(); return; }
+  cs.puz = pz; cs.game = pz.game;
+  const h = pz.game.history({ verbose: true });
+  cs.last = h.length ? { from: h[h.length - 1].from, to: h[h.length - 1].to } : null;
+  cs.state = "play";
+  el.chessInfo.textContent = (pz.color === "w" ? "Weiß" : "Schwarz") + " am Zug" + (pz.rating ? " · Wertung " + pz.rating : "");
+  setChessStatus("Finde den besten Zug. Ein falscher Zug beendet das Puzzle.");
+  renderBoard(); chessButtons();
+  cs.nextP = fetchPuzzle().catch(() => null);   // nächstes Puzzle schon laden
+}
+
+function renderBoard() {
+  const g = cs.game, flip = !!cs.puz && cs.puz.color === "b";
+  const grid = g ? g.board() : null;
+  let rects = "", over = "", pcs = "", dots = "";
+  for (let rr = 0; rr < 8; rr++) for (let cc = 0; cc < 8; cc++) {
+    const row = flip ? 7 - rr : rr, col = flip ? 7 - cc : cc;
+    const name = "abcdefgh"[col] + (8 - row);
+    rects += '<rect class="sq ' + ((row + col) % 2 === 0 ? "l" : "d") + '" data-sq="' + name + '" x="' + cc + '" y="' + rr + '" width="1" height="1"/>';
+    const ov = c => '<rect class="hl ' + c + '" x="' + cc + '" y="' + rr + '" width="1" height="1"/>';
+    if (cs.last && (cs.last.from === name || cs.last.to === name)) over += ov("last");
+    if (cs.hint && (cs.hint.from === name || cs.hint.to === name)) over += ov("hint");
+    if (cs.sel === name) over += ov("sel");
+    const pc = grid && grid[row][col];
+    if (pc) pcs += '<text class="pc ' + pc.color + '" x="' + (cc + 0.5) + '" y="' + (rr + 0.76) + '" text-anchor="middle" font-size=".88">' + GLYPH[pc.type] + '\uFE0E</text>';
+    if (cs.legal.some(m => m.to === name)) {
+      dots += pc ? '<circle class="ring" cx="' + (cc + 0.5) + '" cy="' + (rr + 0.5) + '" r=".42"/>'
+                 : '<circle class="dot" cx="' + (cc + 0.5) + '" cy="' + (rr + 0.5) + '" r=".17"/>';
+    }
+  }
+  el.board.innerHTML = '<svg viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg">' + rects + over + pcs + dots + '</svg>';
+}
+
+function onSquare(sq) {
+  if (cs.state !== "play") return;
+  if (cs.sel) {
+    const mv = cs.legal.find(m => m.to === sq);
+    if (mv) { tryMove(mv); return; }
+  }
+  const pc = cs.game.get(sq);
+  if (pc && pc.color === cs.puz.color && sq !== cs.sel) { cs.sel = sq; cs.legal = cs.game.moves({ square: sq, verbose: true }); }
+  else { cs.sel = null; cs.legal = []; }
+  renderBoard();
+}
+
+function tryMove(mv) {
+  const pz = cs.puz, exp = pz.sol[pz.i];
+  let promo = mv.promotion;
+  if (promo && exp && exp.length > 4 && exp.slice(0, 4) === mv.from + mv.to) promo = exp[4];   // Umwandlung wie in der Lösung
+  const uci = mv.from + mv.to + (promo || "");
+  cs.game.move({ from: mv.from, to: mv.to, promotion: promo });
+  cs.sel = null; cs.legal = [];
+  if (uci === exp || cs.game.isCheckmate()) {          // jedes Matt zählt, wie bei Lichess
+    cs.last = { from: mv.from, to: mv.to };
+    pz.i++;
+    if (cs.game.isCheckmate() || pz.i >= pz.sol.length) { renderBoard(); solvedPuzzle(); return; }
+    cs.state = "reply"; renderBoard(); chessButtons();
+    setChessStatus("Richtig. Gegenzug ...");
+    const token = cs.token;
+    setTimeout(() => {
+      if (token !== cs.token || cs.state !== "reply") return;
+      try { const m = cs.game.move(uciMove(pz.sol[pz.i])); cs.last = { from: m.from, to: m.to }; pz.i++; }
+      catch { solvedPuzzle(); return; }
+      if (pz.i >= pz.sol.length) { renderBoard(); solvedPuzzle(); return; }
+      cs.state = "play"; renderBoard(); chessButtons();
+      setChessStatus("Weiter. Finde den nächsten Zug.");
+    }, 450);
+  } else failPuzzle();
+}
+
+function solvedPuzzle() {
+  cs.solved++; cs.state = "solved";
+  renderChessCount(); chessButtons();
+  setChessStatus("Gelöst! +" + fmtMin(settings.chessMin) + " Min.");
+  beep(880, .15);
+}
+function failPuzzle() {
+  cs.game.undo();
+  const exp = cs.puz.sol[cs.puz.i];
+  let san = "";
+  try { san = new Chess(cs.game.fen()).move(uciMove(exp)).san; } catch {}
+  cs.hint = { from: exp.slice(0, 2), to: exp.slice(2, 4) };
+  cs.state = "failed";
+  renderBoard(); chessButtons();
+  setChessStatus("Falsch. Richtig war " + san + ". Für dieses Puzzle gibt es nichts.", true);
+}
+
+function showChess() {
+  try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === "suspended") audioCtx.resume(); } catch {}
+  showOnly("chessView");
+  cs.solved = 0; cs.puz = null; cs.game = null; cs.nextP = null; cs.last = null; cs.hint = null; cs.sel = null; cs.legal = [];
+  el.chessInfo.textContent = "";
+  renderChessCount(); renderBoard(); startPuzzle();
+}
+function leaveChess() {
+  if (cs.solved > 0 && !confirm("Gelöste Puzzles verwerfen? Sie sind noch nicht gutgeschrieben.")) return;
+  showTasks();
+}
+function finishChess() {
+  if (DEMO) { showHome(); setHome("Demo-Ansicht: es wird nichts gutgeschrieben."); return; }
+  if (cs.solved < 1) return;
+  if (getPending()) { setChessStatus("Eine frühere Anfrage ist noch offen. Erst auf der Startseite erneut senden.", true); return; }
+  queueEarn("chess", Math.round(cs.solved * settings.chessMin * 10) / 10, cs.solved);
+}
+
+// ---------- Gedächtnis (Muster und Zahlen) ----------
+const MEM_START = 4;     // Startlänge der Reihe
+const MEM_OFFSET = 3;    // Minuten pro Runde = Länge minus 3 (Länge 4 gibt 1 Min, Länge 5 gibt 2 Min, ...)
+const mem = { kind: "grid", len: MEM_START, seq: [], pos: 0, state: "idle", earned: 0, rounds: 0, token: 0 };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const rnd = n => Math.floor(Math.random() * n);
+const memGain = len => len - MEM_OFFSET;
+const cells = () => Array.from(el.memGrid.children);
+
+function setMemStatus(msg, warn = false) { el.memStatus.textContent = msg; el.memStatus.classList.toggle("warn", warn); }
+function renderMemCount() {
+  el.memCount.textContent = mem.rounds;
+  el.memMin.textContent = fmtMin(mem.earned);
+}
+function memUI() {
+  const idle = mem.state === "idle" || mem.state === "over";
+  const digits = mem.kind === "digits";
+  el.memStart.classList.toggle("hidden", !idle);
+  el.memStart.textContent = mem.state === "over" ? "Neuer Versuch" : "Start";
+  el.memFinish.classList.toggle("hidden", mem.earned <= 0);
+  el.memGrid.classList.toggle("hidden", digits);
+  el.memGrid.classList.toggle("off", mem.state !== "input");
+  el.digitBox.classList.toggle("hidden", !digits);
+  el.memInput.classList.toggle("hidden", !(digits && mem.state === "input"));
+  el.memCheck.classList.toggle("hidden", !(digits && mem.state === "input"));
+  el.memSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.kind === mem.kind)));
+  el.memInfo.textContent = (digits ? "Zahlen erscheinen nacheinander, danach tippst du sie ein." : "Felder leuchten nacheinander auf, danach tippst du sie in derselben Reihenfolge an.")
+    + " Start bei " + MEM_START + ": Länge " + MEM_START + " gibt " + memGain(MEM_START) + " Min, jede längere Runde 1 Min mehr. Ein Fehler beendet den Versuch, erspielte Minuten bleiben.";
+}
+function memStop() { mem.token++; if (mem.state === "show" || mem.state === "input") mem.state = "idle"; }
+
+function showMem() {
+  showOnly("memView");
+  mem.token++; mem.state = "idle"; mem.earned = 0; mem.rounds = 0; mem.len = MEM_START;
+  el.memDigit.textContent = ""; el.memInput.value = "";
+  cells().forEach(c => c.classList.remove("lit", "bad"));
+  renderMemCount(); memUI();
+  setMemStatus("Tippe auf Start.");
+}
+function setMemKind(k) {
+  if (mem.state !== "idle" && mem.state !== "over") return;
+  mem.kind = k === "digits" ? "digits" : "grid";
+  mem.state = "idle";
+  el.memDigit.textContent = "";
+  setMemStatus("Tippe auf Start.");
+  memUI();
+}
+
+async function memRound() {
+  const t = ++mem.token, alive = () => t === mem.token;
+  mem.state = "show"; mem.pos = 0; mem.seq = [];
+  el.memInput.value = "";
+  memUI();
+  setMemStatus("Merk dir die Reihenfolge. Länge " + mem.len + ".");
+  if (mem.kind === "grid") {
+    for (let i = 0; i < mem.len; i++) { let n; do { n = rnd(9); } while (n === mem.seq[i - 1]); mem.seq.push(n); }
+  } else {
+    for (let i = 0; i < mem.len; i++) mem.seq.push(rnd(10));
+  }
+  await sleep(700); if (!alive()) return;
+  for (const n of mem.seq) {
+    if (mem.kind === "grid") { const c = cells()[n]; c.classList.add("lit"); await sleep(550); if (!alive()) return; c.classList.remove("lit"); }
+    else { el.memDigit.textContent = String(n); await sleep(750); if (!alive()) return; el.memDigit.textContent = ""; }
+    await sleep(250); if (!alive()) return;
+  }
+  mem.state = "input";
+  memUI();
+  setMemStatus(mem.kind === "grid" ? "Du bist dran. Tippe die Reihenfolge." : "Du bist dran. Tippe die Zahlen ein.");
+  if (mem.kind === "digits") { try { el.memInput.focus(); } catch {} }
+}
+async function memRoundDone() {
+  const gain = memGain(mem.len), t = mem.token;
+  mem.earned += gain; mem.rounds++; mem.len++;
+  mem.state = "pause";
+  renderMemCount(); memUI();
+  setMemStatus("Richtig! +" + gain + " Min. Gleich geht es weiter.");
+  beep(760, .1);
+  await sleep(1000);
+  if (t === mem.token) memRound();
+}
+function memFail() {
+  mem.state = "over";
+  const lost = mem.kind === "digits" ? " Die Zahlen waren: " + mem.seq.join(" ") + "." : "";
+  setMemStatus("Falsch. Versuch beendet bei Länge " + mem.len + "." + lost, true);
+  memUI();
+}
+function memCellTap(i) {
+  if (mem.state !== "input" || mem.kind !== "grid") return;
+  const c = cells()[i];
+  if (i === mem.seq[mem.pos]) {
+    c.classList.add("lit"); setTimeout(() => c.classList.remove("lit"), 180);
+    mem.pos++;
+    if (mem.pos >= mem.seq.length) memRoundDone();
+  } else {
+    c.classList.add("bad"); setTimeout(() => c.classList.remove("bad"), 500);
+    beep(200, .25);
+    memFail();
+  }
+}
+function memCheck() {
+  if (mem.state !== "input" || mem.kind !== "digits") return;
+  const typed = el.memInput.value.replace(/\D/g, "");
+  if (typed === mem.seq.join("")) memRoundDone(); else { beep(200, .25); memFail(); }
+}
+function leaveMem() {
+  if (mem.earned > 0 && !confirm("Erspielte Minuten verwerfen? Sie sind noch nicht gutgeschrieben.")) return;
+  showTasks();
+}
+function finishMem() {
+  if (DEMO) { showHome(); setHome("Demo-Ansicht: es wird nichts gutgeschrieben."); return; }
+  if (mem.earned <= 0) return;
+  if (getPending()) { setMemStatus("Eine frühere Anfrage ist noch offen. Erst auf der Startseite erneut senden.", true); return; }
+  queueEarn("memory", mem.earned, mem.rounds);
 }
 
 // ---------- Historie ----------
@@ -893,17 +1458,21 @@ function isoWeek(dt) {
   return { year, week: 1 + Math.round((monday - week1) / (7 * 864e5)), monday };
 }
 
-// Tageswerte zu Balken zusammenfassen: r = Push-ups, e = verdiente Minuten, u = eingelöste Minuten
+// Tageswerte zu Balken zusammenfassen:
+// r = Push-ups, p = Plank-Sekunden, c = gelöste Puzzles, g = Gedächtnis-Runden, e = verdiente Minuten, u = eingelöste Minuten
+const HKEYS = ["r", "p", "c", "g", "e", "u"];
+const hZero = () => ({ r: 0, p: 0, c: 0, g: 0, e: 0, u: 0 });
+const hAdd = (o, d) => { for (const k of HKEYS) o[k] += d[k] || 0; };
 function buildSeries(range, days, todayKey) {
   const T = parseKey(todayKey), items = [];
   const sumDays = (from, count) => {
-    const o = { r: 0, e: 0, u: 0 };
-    for (let i = 0; i < count; i++) { const d = days[keyOf(addDays(from, i))]; if (d) { o.r += d.r || 0; o.e += d.e || 0; o.u += d.u || 0; } }
+    const o = hZero();
+    for (let i = 0; i < count; i++) { const d = days[keyOf(addDays(from, i))]; if (d) hAdd(o, d); }
     return o;
   };
   const sumPrefix = prefix => {
-    const o = { r: 0, e: 0, u: 0 };
-    for (const k of Object.keys(days)) if (k.startsWith(prefix)) { o.r += days[k].r || 0; o.e += days[k].e || 0; o.u += days[k].u || 0; }
+    const o = hZero();
+    for (const k of Object.keys(days)) if (k.startsWith(prefix)) hAdd(o, days[k]);
     return o;
   };
   if (range === "day") {
@@ -975,7 +1544,9 @@ function demoHistory() {
     const dt = addDays(today, -i), seed = (i * 37 + 11) % 100;
     if (seed < 22) continue;                                   // freie Tage
     const r = 20 + ((seed * 7 + i * 3) % 90);
-    days[keyOf(dt)] = { r, e: r, u: Math.round(r * (0.35 + ((seed % 6) / 10))) };
+    const p = seed % 3 === 0 ? 20 + seed % 70 : 0, c = seed % 4 === 0 ? 1 + seed % 6 : 0, g = seed % 5 === 0 ? 2 + seed % 8 : 0;
+    const e = r + p / 4 + c * 5 + g * 2;
+    days[keyOf(dt)] = { r, p, c, g, e, u: Math.round(e * (0.35 + ((seed % 6) / 10))) };
   }
   return { today: keyOf(today), days, resetHour: 4 };
 }
@@ -983,32 +1554,39 @@ function demoHistory() {
 function renderHistory() {
   if (!histData) return;
   const items = buildSeries(histRange, histData.days || {}, histData.today);
-  const tot = items.reduce((a, i) => ({ r: a.r + i.r, e: a.e + i.e, u: a.u + i.u }), { r: 0, e: 0, u: 0 });
-  const used = tot.e > 0 ? Math.round(tot.u / tot.e * 100) + " %" : "-";
+  // Kennzahlen gelten für den laufenden Zeitraum (letzter Balken): heute, diese Woche, dieser Monat, dieses Jahr
+  const cur = items[items.length - 1];
+  const curLabel = {
+    day: "Heute, " + cur.name,
+    week: "Diese Woche (" + cur.name.split(",")[0] + ")",
+    month: "Dieser Monat (" + cur.name + ")",
+    year: "Dieses Jahr (" + cur.name + ")"
+  }[histRange];
+  const used = cur.e > 0 ? Math.round(cur.u / cur.e * 100) + " %" : "-";
   el.histRange.textContent = RANGE_TEXT[histRange];
   el.rangeSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.range === histRange)));
 
+  const tile = (k, v) => '<div class="tile"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>';
+  // Tabelle: Spalten für Plank, Schach und Gedächtnis nur, wenn es im Zeitraum Werte gibt
+  const cols = [["r", "Push-ups", fmtNum], ["p", "Plank", fmtClock], ["c", "Schach", fmtNum], ["g", "Gedächtnis", fmtNum], ["u", "Eingelöst", fmtNum]]
+    .filter(c => c[0] === "r" || c[0] === "u" || items.some(i => i[c[0]] > 0));
   const rows = items.slice().reverse().map(i =>
-    '<tr class="' + (i.r || i.u ? "" : "zero") + '"><td>' + i.name + '</td><td>' + fmtNum(i.r) + '</td><td>' + fmtNum(i.u) + '</td></tr>').join("");
+    '<tr class="' + (i.r || i.p || i.c || i.g || i.u ? "" : "zero") + '"><td>' + i.name + '</td>' + cols.map(c => '<td>' + c[2](i[c[0]]) + '</td>').join("") + '</tr>').join("");
 
   el.histBody.innerHTML =
-    '<div class="card hcard"><div class="tiles">' +
-      '<div class="tile"><div class="k">Push-ups</div><div class="v">' + fmtNum(tot.r) + '</div></div>' +
-      '<div class="tile"><div class="k">Eingelöst (Min)</div><div class="v">' + fmtNum(tot.u) + '</div></div>' +
-      '<div class="tile"><div class="k">Genutzt</div><div class="v">' + used + '</div></div>' +
-    '</div></div>' +
+    '<div class="card hcard"><p class="label">' + curLabel + '</p>' +
+      '<div class="tiles">' + tile("Push-ups", fmtNum(cur.r)) + tile("Eingelöst (Min)", fmtNum(cur.u)) + tile("Genutzt", used) + '</div>' +
+      '<div class="tiles">' + tile("Plank (Zeit)", fmtClock(cur.p)) + tile("Schach (Puzzles)", fmtNum(cur.c)) + tile("Gedächtnis (Runden)", fmtNum(cur.g)) + '</div>' +
+    '</div>' +
     '<div class="card hcard chart"><h3>Push-ups</h3>' + barChart(items, "r", "s1", "Push-ups") + '</div>' +
+    '<div class="card hcard chart"><h3>Verdiente Minuten (alle Aufgaben)</h3>' + barChart(items, "e", "s1", "Verdiente Minuten") + '</div>' +
     '<div class="card hcard chart"><h3>Eingelöste Minuten</h3>' + barChart(items, "u", "s2", "Eingelöste Minuten") + '</div>' +
-    '<div class="card hcard"><table class="hist"><thead><tr><th>Zeitraum</th><th>Push-ups</th><th>Eingelöst (Min)</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
-    '<p class="hint">Genutzt = eingelöste Minuten im Verhältnis zu den verdienten. Ein Tag läuft von ' + (histData.resetHour ?? 4) + ' bis ' + (histData.resetHour ?? 4) + ' Uhr, passend zum Reset des Guthabens.</p>';
+    '<div class="card hcard"><table class="hist"><thead><tr><th>Zeitraum</th>' + cols.map(c => '<th>' + c[1] + '</th>').join("") + '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<p class="hint">Die Kennzahlen oben gelten für den laufenden Zeitraum. Genutzt = eingelöste Minuten im Verhältnis zu den verdienten. Ein Tag läuft von ' + (histData.resetHour ?? 4) + ' bis ' + (histData.resetHour ?? 4) + ' Uhr, passend zum Reset des Guthabens.</p>';
 }
 
 async function showHistory() {
-  clearInterval(homeTimer);
-  el.homeView.classList.add("hidden");
-  el.trainView.classList.add("hidden");
-  el.historyView.classList.remove("hidden");
-  window.scrollTo(0, 0);
+  showOnly("historyView");
   el.histStatus.textContent = "";
   el.histStatus.classList.remove("warn");
   if (DEMO) { histData = demoHistory(); renderHistory(); return; }
@@ -1017,6 +1595,27 @@ async function showHistory() {
   try { histData = await api("/history"); el.histStatus.textContent = ""; renderHistory(); }
   catch (e) { el.histStatus.textContent = "Historie nicht abrufbar: " + e.message; el.histStatus.classList.add("warn"); renderHistory(); }
 }
+
+// Historie und Guthaben auf dem Server löschen (eine laufende Freischaltung bleibt bestehen)
+el.wipeBtn.addEventListener("click", async () => {
+  if (DEMO) { el.wipeStatus.textContent = "Demo-Ansicht: es wird nichts gelöscht."; return; }
+  if (!confirm("Die gesamte Historie und das aktuelle Guthaben unwiderruflich löschen?\n\nEine laufende Freischaltung bleibt bestehen.")) return;
+  el.wipeBtn.disabled = true;
+  el.wipeStatus.classList.remove("warn");
+  el.wipeStatus.textContent = "Lösche ...";
+  try {
+    const d = await api("/reset", "POST");
+    store.del("pending");        // offene, noch nicht gesendete Gutschrift verwerfen, sonst käme sie nach dem Löschen zurück
+    histData = null;
+    pendingFailed = false;
+    applyState(d);
+    el.wipeStatus.textContent = "Historie und Guthaben gelöscht.";
+  } catch (e) {
+    el.wipeStatus.textContent = "Löschen fehlgeschlagen: " + e.message;
+    el.wipeStatus.classList.add("warn");
+  }
+  el.wipeBtn.disabled = false;
+});
 
 el.histBtn.addEventListener("click", showHistory);
 el.histBack.addEventListener("click", showHome);
@@ -1028,10 +1627,27 @@ el.start.addEventListener("click", startTraining);
 el.stop.addEventListener("click", abort);
 el.finishBtn.addEventListener("click", finish);
 el.back.addEventListener("click", showHome);
-el.trainBtn.addEventListener("click", showTrain);
+el.trainBtn.addEventListener("click", showTasks);
+el.taskBack.addEventListener("click", showHome);
+document.querySelectorAll("button.task").forEach(b => b.addEventListener("click", () => {
+  const t = b.dataset.task;
+  if (t === "chess") showChess(); else if (t === "memory") showMem(); else showTrain(t);
+}));
+el.board.addEventListener("click", e => { const t = e.target.closest && e.target.closest("[data-sq]"); if (t) onSquare(t.getAttribute("data-sq")); });
+el.chessNext.addEventListener("click", () => startPuzzle());
+el.chessSkip.addEventListener("click", () => startPuzzle());
+el.chessFinish.addEventListener("click", finishChess);
+el.chessBack.addEventListener("click", leaveChess);
+el.memSeg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => setMemKind(b.dataset.kind)));
+cells().forEach((c, i) => c.addEventListener("click", () => memCellTap(i)));
+el.memStart.addEventListener("click", () => { try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === "suspended") audioCtx.resume(); } catch {} mem.len = MEM_START; memRound(); });
+el.memCheck.addEventListener("click", memCheck);
+el.memInput.addEventListener("keydown", e => { if (e.key === "Enter") memCheck(); });
+el.memFinish.addEventListener("click", finishMem);
+el.memBack.addEventListener("click", leaveMem);
 el.retryBtn.addEventListener("click", sendPending);
 
-document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
+document.querySelectorAll(".chip[data-min]").forEach(b => b.addEventListener("click", () => {
   el.redeemInput.value = b.dataset.min === "all" ? fmtMin(liveTotal()) : b.dataset.min;
 }));
 
