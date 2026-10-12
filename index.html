@@ -2,7 +2,7 @@
 <html lang="de" data-theme="halle">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Pain4Gain">
 <meta name="theme-color" content="#EEF1EC">
@@ -49,6 +49,7 @@
   }
 
   * { box-sizing: border-box; }
+  html, body { touch-action: manipulation; }   /* kein Doppeltipp-Zoom */
   html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); }
   body {
     min-height: 100%;
@@ -216,8 +217,9 @@
   canvas.flappy {
     display: block; width: min(100%, calc(56vh * .6667)); aspect-ratio: 2 / 3; margin: 12px auto 0;
     background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--rc);
-    touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; cursor: pointer;
+    touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; cursor: pointer;
   }
+  #flappyView { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 
   /* Gedächtnis */
   .memgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: min(100%, 56vh); margin: 12px auto 0; }
@@ -1581,7 +1583,11 @@ document.querySelectorAll("button.task").forEach(b => b.addEventListener("click"
   const t = b.dataset.task;
   if (t === "flappy") showFlappy(); else if (t === "memory") showMem(); else showTrain(t);
 }));
-el.flappyCanvas.addEventListener("pointerdown", e => { e.preventDefault(); flappyTap(); });
+// Tippen irgendwo in der Spielansicht (außer auf Knöpfen) lässt den Vogel flattern. So gehen schnelle Tipps nie ins Leere und lösen keinen Zoom aus.
+el.flappyView.addEventListener("pointerdown", e => { if (e.target.closest && e.target.closest("button")) return; e.preventDefault(); flappyTap(); });
+el.flappyView.addEventListener("touchstart", e => { if (e.target.closest && e.target.closest("button")) return; e.preventDefault(); }, { passive: false });
+el.flappyView.addEventListener("dblclick", e => e.preventDefault());
+document.addEventListener("gesturestart", e => { if (!el.flappyView.classList.contains("hidden")) e.preventDefault(); });   // Zwei-Finger-Zoom (iOS)
 document.addEventListener("keydown", e => { if (e.code === "Space" && !el.flappyView.classList.contains("hidden")) { e.preventDefault(); flappyTap(); } });
 el.flappyFinish.addEventListener("click", finishFlappy);
 el.flappyBack.addEventListener("click", leaveFlappy);
